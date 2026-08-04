@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Apply.X - AI Career Coach</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+    :root {
+        --axf-bg: #F8F9FF;
+        --axf-primary: #4F7CFF;
+        --axf-secondary: #8A4DFF;
+        --axf-text: #111827;
+        --axf-muted: #6B7280;
+        --axf-border: #EAEAEA;
+        --axf-radius-lg: 28px;
+        --axf-radius-md: 20px;
+        --axf-radius-input: 18px;
+        --axf-success: #22C55E;
+        --axf-warning: #F59E0B;
+        --axf-danger: #EF4444;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--axf-bg);
+        color: var(--axf-text);
+        max-width: 480px; /* STRICTLY MOBILE FIRST - NO DESKTOP LAYOUT */
+        margin: 0 auto;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    body::-webkit-scrollbar { display: none; }
+    body { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes slideUpModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes axfFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+    @keyframes axfGlowPulse { 0%,100%{opacity:.55; transform:scale(1);} 50%{opacity:.9; transform:scale(1.06);} }
+    @keyframes scalePop { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+    /* --- AUTH MODAL CSS --- */
+    .auth-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; animation: fadeIn 0.3s ease; }
+    .auth-overlay.show { display: flex; }
+    .auth-card { background: #FFFFFF; width: 100%; max-width: 400px; border-radius: 28px; padding: 32px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.2); text-align: center; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .auth-close { position: absolute; top: 20px; right: 20px; cursor: pointer; color: #9ca3af; font-size: 22px; line-height: 1; transition: 0.2s; }
+    .auth-logo { display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; margin-bottom: 20px; font-size: 18px; color: #1a1a2e; }
+    .auth-logo .nav-logo-icon { width: 32px; height: 32px; font-size: 16px; }
+    .auth-card h3 { margin: 0 0 8px; font-size: 24px; font-weight: 800; color: #111827; }
+    .auth-card .sub { margin: 0 0 24px; font-size: 14px; color: #6b7280; }
+    .google-btn { width: 100%; padding: 14px; border-radius: 14px; background: #FFFFFF; border: 1px solid #e5e7eb; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; color: #374151; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .google-btn:active { transform: scale(0.98); }
+    .auth-divider { margin: 20px 0; position: relative; }
+    .auth-divider::before { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb; }
+    .auth-divider span { background: #FFFFFF; padding: 0 12px; color: #6b7280; font-size: 12px; font-weight: 600; position: relative; z-index: 1; }
+    .auth-input { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid #e5e7eb; background: #F8FAFC; margin-bottom: 12px; font-size: 14px; color: #1a1a2e; transition: 0.2s; }
+    .auth-input:focus { outline: none; border-color: #8A4DFF; background: white; box-shadow: 0 0 0 4px rgba(138,77,255,0.1); }
+    .auth-btn { width: 100%; padding: 14px; border-radius: 14px; background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color: white; border: none; font-weight: 700; cursor: pointer; margin-top: 4px; font-size: 14px; box-shadow: 0 4px 14px rgba(79,124,255,0.3); transition: 0.2s; }
+    .auth-btn:active { transform: scale(0.98); }
+    .auth-toggle { margin-top: 20px; font-size: 13px; color: #6b7280; }
+    .auth-toggle span { color: #4F7CFF; font-weight: 700; cursor: pointer; }
+    #authErrorMsg { color: #EF4444; font-size: 12px; margin-top: 10px; display: none; background: #FEE2E2; padding: 8px; border-radius: 8px; }
+
+    /* --- APP LAYOUT (Mobile First) --- */
+    #landingPage { padding: 20px; display: block; }
+    #appContainer { display: none; padding-bottom: 100px; }
+    
+    .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px; position: sticky; top: 0; background: rgba(248, 249, 255, 0.8); backdrop-filter: blur(20px); z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.6); }
+    .nav-logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; }
+    .nav-logo-icon { width: 34px; height: 34px; border-radius: 11px; background: linear-gradient(135deg, var(--axf-primary), var(--axf-secondary)); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; box-shadow: 0 6px 16px rgba(91,95,255,0.35); }
+    .streak-badge { display: flex; align-items: center; gap: 5px; background: rgba(255, 159, 67, 0.15); color: #F59E0B; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 14px; cursor: pointer; }
+
+    /* --- GLASSMORPHISM CARDS --- */
+    .glass-card { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); border: 1px solid rgba(255,255,255,0.6); border-radius: var(--axf-radius-lg); padding: 20px; box-shadow: 0 10px 30px -10px rgba(91,95,255,0.15); margin-bottom: 16px; transition: transform 0.2s; }
+    .glass-card:active { transform: scale(0.98); }
+    
+    .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .card-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; background: linear-gradient(135deg, rgba(91,95,255,0.1), rgba(123,77,255,0.1)); }
+    .card-title { font-size: 18px; font-weight: 800; margin: 0; }
+    .card-sub { font-size: 13px; color: var(--axf-muted); margin: 2px 0 0; }
+
+    /* --- DASHBOARD --- */
+    .dash-welcome { font-size: 24px; font-weight: 800; margin: 20px 0 5px; }
+    .dash-sub { color: var(--axf-muted); margin: 0 0 20px; font-size: 14px; }
+    
+    .level-card { background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color: white; padding: 24px; border-radius: 24px; margin-bottom: 20px; position: relative; overflow: hidden; box-shadow: 0 15px 30px -10px rgba(79,124,255,0.4); }
+    .level-card::after { content: "✨"; position: absolute; top: -10px; right: -10px; font-size: 80px; opacity: 0.2; }
+    .level-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .level-num { font-size: 32px; font-weight: 800; margin: 0; }
+    .xp-bar-bg { height: 10px; background: rgba(255,255,255,0.3); border-radius: 5px; overflow: hidden; }
+    .xp-bar-fill { height: 100%; background: white; border-radius: 5px; transition: width 0.5s ease; }
+
+    .readiness-ring-container { display: flex; justify-content: center; margin-bottom: 20px; }
+    .readiness-ring { position: relative; width: 120px; height: 120px; }
+    .readiness-ring svg { transform: rotate(-90deg); }
+    .readiness-ring-bg { stroke: #E5E7EB; }
+    .readiness-ring-fill { stroke: url(#grad1); stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+    .readiness-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+    .readiness-text h2 { margin: 0; font-size: 28px; font-weight: 800; }
+    .readiness-text p { margin: 0; font-size: 10px; color: var(--axf-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat-box { background: white; padding: 16px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: transform 0.2s; }
+    .stat-box:active { transform: scale(0.96); }
+    .stat-icon { font-size: 20px; margin-bottom: 5px; }
+    .stat-val { font-size: 22px; font-weight: 800; color: var(--axf-text); }
+    .stat-label { font-size: 12px; color: var(--axf-muted); }
+
+    .action-btn { width: 100%; padding: 16px; border-radius: 16px; border: none; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
+    .btn-primary { background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color: white; box-shadow: 0 4px 14px rgba(79,124,255,0.3); }
+    .btn-secondary { background: #F3F4F6; color: var(--axf-text); }
+    .btn-success { background: #EEFDF3; color: #22C55E; border: 1px solid #D1FAE5; }
+    .btn-danger { background: #FFF0F0; color: #EF4444; border: 1px solid #FEE2E2; }
+    .action-btn:active { transform: scale(0.98); }
+
+    .mission-card { display: flex; align-items: center; padding: 15px; background: white; border-radius: 16px; margin-bottom: 10px; border-left: 4px solid var(--axf-primary); }
+    .mission-icon { font-size: 24px; margin-right: 15px; }
+    .mission-text h4 { margin: 0; font-size: 14px; }
+    .mission-text p { margin: 0; font-size: 12px; color: var(--axf-muted); }
+    .mission-btn { margin-left: auto; background: var(--axf-primary); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+    /* --- BOTTOM NAVIGATION --- */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.8); display: flex; justify-content: space-around; padding: 12px 0 20px; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: var(--axf-muted); font-size: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .nav-item.active { color: var(--axf-primary); }
+    .nav-item svg { width: 24px; height: 24px; }
+
+    /* --- VIEWS --- */
+    .view { display: none; animation: fadeIn 0.3s ease; padding: 0 20px; }
+    .view.active { display: block; }
+
+    /* --- RESUME TEMPLATES --- */
+    .tpl-selector { display: flex; gap: 8px; margin-bottom: 16px; background: white; padding: 10px; border-radius: 16px; overflow-x: auto; white-space: nowrap; }
+    .tpl-btn { padding: 10px 15px; border-radius: 10px; border: 1px solid #e5e7eb; background: #f8fafc; color: #6b7280; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .tpl-btn.active { background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color: white; border-color: transparent; }
+    .a4-page { background: white; width: 100%; min-height: 400px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+    
+    .ats-header { text-align: left; border-bottom: 2px solid #1a1a2e; padding-bottom: 15px; margin-bottom: 20px; }
+    .ats-header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+    .ats-role { margin: 2px 0 8px; font-size: 14px; color: #4F7CFF; font-weight: 500; }
+    .ats-contact { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: #6b7280; margin-bottom: 10px; }
+    .ats-section { margin-bottom: 18px; }
+    .ats-section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin: 0 0 10px; }
+    .ats-section p { font-size: 12px; line-height: 1.5; margin: 0; color: #374151; }
+    .ats-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ats-skills span { font-size: 11px; background: #f3f4f6; padding: 5px 10px; border-radius: 4px; font-weight: 500; }
+
+    /* --- ROADMAP --- */
+    .roadmap-track { position: relative; padding-left: 30px; }
+    .roadmap-track::before { content: ""; position: absolute; left: 14px; top: 10px; bottom: 10px; width: 2px; background: #E5E7EB; }
+    .roadmap-step { position: relative; margin-bottom: 24px; }
+    .roadmap-dot { position: absolute; left: -30px; top: 0; width: 30px; height: 30px; background: white; border: 3px solid #E5E7EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 1; transition: 0.3s; }
+    .roadmap-step.completed .roadmap-dot { background: #22C55E; border-color: #22C55E; color: white; }
+    .roadmap-content { background: white; padding: 16px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .roadmap-content h4 { margin: 0 0 5px; font-size: 15px; }
+    .roadmap-content p { margin: 0 0 10px; font-size: 12px; color: var(--axf-muted); }
+
+    /* --- REPORT --- */
+    .report-header { text-align: center; margin-bottom: 20px; }
+    .report-header h1 { font-size: 22px; margin: 0; }
+    .report-section { margin-bottom: 20px; }
+    .report-section h3 { font-size: 16px; margin: 0 0 10px; border-left: 4px solid var(--axf-primary); padding-left: 10px; }
+    .report-stat { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+
+    /* --- ACHIEVEMENTS --- */
+    .badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .badge-card { background: white; padding: 12px; border-radius: 16px; text-align: center; opacity: 0.4; filter: grayscale(1); transition: 0.3s; }
+    .badge-card.unlocked { opacity: 1; filter: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); animation: scalePop 0.5s ease; }
+    .badge-icon { font-size: 32px; margin-bottom: 5px; }
+    .badge-name { font-size: 10px; font-weight: 700; line-height: 1.2; }
+
+    /* --- CELEBRATION & MODALS --- */
+    .celebration { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 9998; display: none; }
+    .celebration.show { display: block; }
+    .confetti { position: absolute; width: 10px; height: 10px; background: var(--axf-primary); animation: fall 2s linear forwards; }
+    @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+
+    .levelup-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 9999; animation: fadeIn 0.3s; }
+    .levelup-card { background: linear-gradient(135deg, #4F7CFF, #8A4DFF); width: 90%; padding: 40px 20px; border-radius: 30px; text-align: center; color: white; animation: scalePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .levelup-icon { font-size: 60px; margin-bottom: 10px; animation: axfFloat 2s infinite; }
+    .levelup-title { font-size: 28px; font-weight: 800; margin: 10px 0; }
+    .levelup-sub { font-size: 14px; opacity: 0.9; margin-bottom: 20px; }
+    .levelup-btn { background: white; color: var(--axf-primary); border: none; padding: 12px 30px; border-radius: 20px; font-weight: 800; font-size: 16px; cursor: pointer; }
+
+    /* --- FORM INPUTS (Landing Page) --- */
+    .input-field { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 16px; border: 1.5px solid #EAEAEA; background: #FBFBFF; font-size: 14px; color: var(--axf-text); transition: 0.2s; box-sizing: border-box; }
+    .input-field:focus { outline: none; border-color: var(--axf-primary); background: white; box-shadow: 0 0 0 4px rgba(91,95,255,0.1); }
+    
+    /* --- INTERVIEW CHAT --- */
+    .chat-box { max-height: 400px; overflow-y: auto; margin-bottom: 16px; padding-right: 10px; }
+    .chat-bubble { max-width: 80%; padding: 12px 16px; border-radius: 16px; margin-bottom: 12px; font-size: 14px; line-height: 1.4; animation: slideUp 0.3s ease; }
+    .chat-ai { background: white; color: var(--axf-text); border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .chat-user { background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color: white; margin-left: auto; border-bottom-right-radius: 4px; }
+
+    /* --- PROCESSING OVERLAY --- */
+    .processing-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.95); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .orbit-card { width: 100%; max-width: 400px; text-align: center; }
+    .orbit-wrap { position: relative; width: 200px; height: 200px; margin: 0 auto 30px; }
+    .orbit-ring { position: absolute; inset: 0; border: 2px dashed #E5E7EB; border-radius: 50%; animation: spin 10s linear infinite; }
+    .orbit-spin { position: absolute; inset: 0; animation: spin 5s linear infinite; }
+    .orbit-icon { position: absolute; width: 50px; height: 50px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .orbit-top { top: -25px; left: 50%; transform: translateX(-50%); }
+    .orbit-right { right: -25px; top: 50%; transform: translateY(-50%); }
+    .orbit-bottom { bottom: -25px; left: 50%; transform: translateX(-50%); }
+    .orbit-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: linear-gradient(135deg, #4F7CFF, #8A4DFF); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .steps-box { margin-top: 20px; }
+    .step-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: white; border-radius: 10px; margin-bottom: 8px; }
+    .progress-track { height: 6px; background: #E5E7EB; border-radius: 3px; margin-top: 10px; }
+    .progress-fill { height: 100%; background: #22C55E; border-radius: 3px; width: 0%; transition: width 0.5s; }
+    
+    /* --- MODALS (Learn Hub, Outreach, etc.) --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 9999; display: none; justify-content: center; align-items: flex-end; }
+    .modal-overlay.show { display: flex; }
+    .modal-card { background: white; width: 100%; max-width: 480px; border-radius: 28px 28px 0 0; padding: 24px; max-height: 90vh; overflow-y: auto; animation: slideUpModal 0.3s ease-out; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-size: 20px; font-weight: 800; margin: 0; }
+    .modal-close { background: #F3F4F6; color: var(--axf-muted); border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
+    .quiz-option { padding: 12px; border: 1.5px solid #EAEAEA; border-radius: 12px; margin-bottom: 8px; font-size: 14px; cursor: pointer; transition: 0.2s; }
+    .quiz-option:active { transform: scale(0.98); }
+    .quiz-option.selected { border-color: var(--axf-primary); background: rgba(79,124,255,0.05); color: var(--axf-primary); font-weight: 700; }
+    .quiz-option.correct { border-color: var(--axf-success); background: rgba(34,197,94,0.1); color: var(--axf-success); font-weight: 700; }
+    .quiz-option.wrong { border-color: var(--axf-danger); background: rgba(239,68,68,0.1); color: var(--axf-danger); font-weight: 700; }
+
+    .resource-link { display: flex; align-items: center; gap: 10px; padding: 12px; background: #F8FAFC; border-radius: 12px; margin-bottom: 8px; text-decoration: none; color: var(--axf-text); font-size: 14px; font-weight: 600; }
+    .resource-link:active { transform: scale(0.98); }
+    .resource-icon { width: 36px; height: 36px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+    .desktop-only { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- AUTH MODAL -->
+<div class="auth-overlay" id="authModal">
+    <div class="auth-card">
+        <span class="auth-close" onclick="closeAuth()">✕</span>
+        <div class="auth-logo">
+            <div class="nav-logo-icon">A</div>
+            <span>Apply.X</span>
+        </div>
+        <div id="signupView">
+            <h3>Create Free Account</h3>
+            <p class="sub">Start building AI resumes today.</p>
+            <button class="google-btn" onclick="handleGoogleLogin()">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                Continue with Google
+            </button>
+            <div class="auth-divider"><span>OR SIGNUP WITH EMAIL</span></div>
+            <input type="text" id="su_name" class="auth-input" placeholder="Full Name">
+            <input type="email" id="su_email" class="auth-input" placeholder="Email Address">
+            <input type="password" id="su_password" class="auth-input" placeholder="Create Password">
+            <div id="authErrorMsg"></div>
+            <button class="auth-btn" onclick="handleSignUp()">Create Account</button>
+            <p class="auth-toggle">Already have an account? <span onclick="toggleAuth('login')">Login</span></p>
+        </div>
+        <div id="loginView" style="display:none;">
+            <h3>Welcome Back 👋</h3>
+            <p class="sub">Login to continue your career journey.</p>
+            <button class="google-btn" onclick="handleGoogleLogin()">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                Continue with Google
+            </button>
+            <div class="auth-divider"><span>OR LOGIN WITH EMAIL</span></div>
+            <input type="email" id="li_email" class="auth-input" placeholder="Email Address">
+            <input type="password" id="li_password" class="auth-input" placeholder="Password">
+            <div id="authErrorMsg"></div>
+            <button class="auth-btn" onclick="handleLogin()">Login</button>
+            <p class="auth-toggle">Don't have an account? <span onclick="toggleAuth('signup')">Sign Up</span></p>
+        </div>
+    </div>
+</div>
+
+<!-- LANDING PAGE -->
+<div id="landingPage">
+    <div class="nav-bar">
+        <div class="nav-logo">
+            <div class="nav-logo-icon">A</div>
+            <span>Apply.X</span>
+        </div>
+        <span class="streak-badge" style="background: rgba(91,95,255,0.1); color: var(--axf-primary);" onclick="openAuth('signup')">Sign Up</span>
+    </div>
+    
+    <div style="text-align: center; margin: 40px 0;">
+        <h1 style="font-size: 32px; line-height: 1.2; margin-bottom: 10px;">Build Your <span style="background: linear-gradient(135deg, #4F7CFF, #8A4DFF); -webkit-background-clip: text; color: transparent;">Dream Career</span> with AI</h1>
+        <p style="color: var(--axf-muted); font-size: 15px;">Create ATS resumes, analyze skill gaps, practice interviews & track your career growth like a game.</p>
+    </div>
+
+    <div class="glass-card">
+        <div class="card-header">
+            <div class="card-icon">👤</div>
+            <div>
+                <h2 class="card-title">Enter Your Details</h2>
+                <p class="card-sub">Generate your AI career profile instantly.</p>
+            </div>
+        </div>
+        <input type="text" id="name" class="input-field" placeholder="👤 Full Name">
+        <input type="text" id="phone" class="input-field" placeholder="📞 Phone Number">
+        <input type="email" id="email" class="input-field" placeholder="✉️ Email Address">
+        <input type="text" id="linkedin" class="input-field" placeholder="🔗 LinkedIn Profile (optional)">
+        <input type="text" id="address" class="input-field" placeholder="📍 City, State">
+        <textarea id="education" class="input-field" placeholder="🎓 Education (e.g. B.Tech CSE, XYZ College)"></textarea>
+        <textarea id="skills" class="input-field" placeholder="</> Your current skills (comma separated)"></textarea>
+        <textarea id="experience" class="input-field" placeholder="💼 Experience / Projects"></textarea>
+        <input type="text" id="target_job" class="input-field" placeholder="🎯 Target Job Role (e.g. Data Analyst)">
+        <button class="action-btn btn-primary" onclick="generateEverything()">✨ Generate Everything</button>
+        <p id="formError" style="color:#EF4444; font-size:13px; margin-top:10px; display:none; text-align:center;"></p>
+    </div>
+</div>
+
+<!-- MAIN APP CONTAINER (Hidden Initially) -->
+<div id="appContainer">
+    <!-- TOP NAV -->
+    <div class="nav-bar">
+        <div class="nav-logo">
+            <div class="nav-logo-icon">A</div>
+            <span>Apply.X</span>
+        </div>
+        <div class="streak-badge" id="topStreakBadge">🔥 1</div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div class="view active" id="view-dashboard">
+        <h1 class="dash-welcome">Welcome back 👋</h1>
+        <p class="dash-sub" id="dashUserName">Let's boost your career today!</p>
+
+        <!-- Level & XP -->
+        <div class="level-card">
+            <div class="level-top">
+                <div>
+                    <p style="margin:0; opacity:0.8; font-size:12px;">CURRENT LEVEL</p>
+                    <h3 class="level-num" id="userLevel">Level 1</h3>
+                </div>
+                <div style="text-align:right;">
+                    <p style="margin:0; font-size:12px; opacity:0.8;">🔥 Daily Streak</p>
+                    <h3 class="level-num" id="userStreak">1 Day</h3>
+                </div>
+            </div>
+            <div class="xp-bar-bg">
+                <div class="xp-bar-fill" id="xpBarFill" style="width: 0%;"></div>
+            </div>
+            <p style="margin: 10px 0 0; font-size: 12px; opacity:0.9;"><span id="currentXP">0</span> / 1000 XP to Next Level</p>
+        </div>
+
+        <!-- Career Readiness Ring -->
+        <div class="glass-card">
+            <div class="readiness-ring-container">
+                <div class="readiness-ring">
+                    <svg width="120" height="120">
+                        <defs>
+                            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#4F7CFF;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#8A4DFF;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="readiness-ring-bg" cx="60" cy="60" r="50" stroke-width="10" fill="none" />
+                        <circle class="readiness-ring-fill" id="readinessCircle" cx="60" cy="60" r="50" stroke-width="10" fill="none" stroke-dasharray="314" stroke-dashoffset="314" />
+                    </svg>
+                    <div class="readiness-text">
+                        <h2 id="readinessScore">0%</h2>
+                        <p>Readiness</p>
+                    </div>
+                </div>
+            </div>
+            <p style="text-align:center; color:var(--axf-muted); font-size:13px; margin:0;">Complete missions to reach 100% Career Readiness!</p>
+        </div>
+
+        <!-- Career Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-box" onclick="switchView('resume', document.querySelectorAll('.nav-item')[0])">
+                <div class="stat-icon">📈</div>
+                <div class="stat-val" id="statATS">0</div>
+                <div class="stat-label">ATS Score</div>
+            </div>
+            <div class="stat-box" onclick="switchView('resume', document.querySelectorAll('.nav-item')[0])">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-val" id="statMatch">0%</div>
+                <div class="stat-label">Job Match</div>
+            </div>
+            <div class="stat-box" onclick="switchView('learn', document.querySelectorAll('.nav-item')[1])">
+                <div class="stat-icon">🚀</div>
+                <div class="stat-val" id="statSkills">0/0</div>
+                <div class="stat-label">Skills Learned</div>
+            </div>
+            <div class="stat-box" onclick="switchView('interview', document.querySelectorAll('.nav-item')[2])">
+                <div class="stat-icon">🎤</div>
+                <div class="stat-val" id="statInterview">0</div>
+                <div class="stat-label">Mock Interviews</div>
+            </div>
+        </div>
+
+        <!-- Daily Boost (Dynamic) -->
+        <div class="glass-card">
+            <h3 style="margin:0 0 15px; font-size:16px; display:flex; align-items:center; gap:8px;">⚡ Daily Career Boost</h3>
+            <div id="dailyMissions"></div>
+        </div>
+
+        <!-- AI Daily Outreach Challenge -->
+        <div class="glass-card" style="background: linear-gradient(135deg, #8A4DFF, #4F7CFF); color: white; border: none;">
+            <h3 style="margin:0 0 5px; font-size:16px;">🤝 Today's Outreach Challenge</h3>
+            <p style="margin:0 0 15px; font-size:13px; opacity:0.9;" id="outreachDesc">Loading today's networking challenge...</p>
+            <button class="action-btn" style="background: white; color: var(--axf-secondary); margin:0;" onclick="startOutreachChallenge()">Start Challenge</button>
+        </div>
+
+        <!-- AI Daily Tech News & Audio Quiz -->
+        <div class="glass-card" style="background: #1a1a2e; color: white; border: none;">
+            <h3 style="margin:0 0 5px; font-size:16px;">📰 Daily Tech News & Quiz</h3>
+            <p style="margin:0 0 15px; font-size:13px; opacity:0.7;" id="techNewsDesc">Loading today's tech updates...</p>
+            <button class="action-btn" style="background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color: white; margin:0;" onclick="startTechNews()">Listen & Play Quiz</button>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="glass-card">
+            <h3 style="margin:0 0 15px; font-size:16px;">Quick Actions</h3>
+            <button class="action-btn btn-secondary" onclick="switchView('resume', document.querySelectorAll('.nav-item')[0])">📄 View My Resume</button>
+            <button class="action-btn btn-secondary" onclick="switchView('report', document.querySelectorAll('.nav-item')[3])">📊 Career Report</button>
+            <button class="action-btn btn-secondary" onclick="switchView('roadmap', document.querySelectorAll('.nav-item')[3])">🗺️ Career Roadmap</button>
+        </div>
+    </div>
+
+    <!-- RESUME VIEW -->
+    <div class="view" id="view-resume">
+        <h1 class="dash-welcome">My Resume 📄</h1>
+        <div class="tpl-selector">
+            <button class="tpl-btn active" onclick="renderResumeTemplate(1)">ATS Pro</button>
+            <button class="tpl-btn" onclick="renderResumeTemplate(2)">Modern</button>
+            <button class="tpl-btn" onclick="renderResumeTemplate(3)">Minimal</button>
+            <button class="tpl-btn" onclick="renderResumeTemplate(4)">Corporate</button>
+            <button class="tpl-btn" onclick="renderResumeTemplate(5)">Fresher</button>
+        </div>
+        <div id="resumeOutput" class="a4-page"></div>
+        <button class="action-btn btn-primary" onclick="window.print()">⬇️ Download PDF</button>
+    </div>
+
+    <!-- LEARN VIEW -->
+    <div class="view" id="view-learn">
+        <h1 class="dash-welcome">Skill Learning 🚀</h1>
+        <p class="dash-sub">Complete skills to increase your ATS Score & XP.</p>
+        <div id="learnList"></div>
+    </div>
+
+    <!-- INTERVIEW VIEW -->
+    <div class="view" id="view-interview">
+        <h1 class="dash-welcome">AI Mock Interview 🎤</h1>
+        <p class="dash-sub">Practice based on your target job: <b id="targetJobRole"></b></p>
+        
+        <div id="interviewSetup" class="glass-card">
+            <h4 style="margin:0 0 10px;">Select Difficulty</h4>
+            <div style="display:flex; gap:8px; margin-bottom:15px;">
+                <button class="tpl-btn" onclick="selectInterviewType('Beginner')">Beginner</button>
+                <button class="tpl-btn active" onclick="selectInterviewType('Intermediate')">Intermediate</button>
+                <button class="tpl-btn" onclick="selectInterviewType('Advanced')">Advanced</button>
+            </div>
+            <h4 style="margin:0 0 10px;">Interview Type</h4>
+            <div style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+                <button class="tpl-btn active" onclick="selectInterviewCat('HR')">HR</button>
+                <button class="tpl-btn" onclick="selectInterviewCat('Technical')">Technical</button>
+                <button class="tpl-btn" onclick="selectInterviewCat('Behavioral')">Behavioral</button>
+            </div>
+            <button class="action-btn btn-primary" onclick="startInterview()">Start Interview</button>
+        </div>
+
+        <div id="interviewChat" style="display:none;">
+            <div class="chat-box" id="chatBox"></div>
+            <textarea id="answerInput" class="input-field" placeholder="Type your answer here..."></textarea>
+            <button class="action-btn btn-primary" onclick="submitAnswer()">Submit Answer →</button>
+        </div>
+
+        <div id="interviewResult" style="display:none;"></div>
+    </div>
+
+    <!-- ROADMAP VIEW -->
+    <div class="view" id="view-roadmap">
+        <h1 class="dash-welcome">Career Roadmap 🗺️</h1>
+        <p class="dash-sub">Your personalized path to becoming a <b id="roadmapJob"></b></p>
+        <div class="roadmap-track" id="roadmapTrack"></div>
+    </div>
+
+    <!-- REPORT VIEW (Dynamic) -->
+    <div class="view" id="view-report">
+        <h1 class="dash-welcome">Career Report 📊</h1>
+        <p class="dash-sub">A dynamic summary of your career ecosystem.</p>
+        <div id="reportContent"></div>
+    </div>
+
+    <!-- ACHIEVEMENTS VIEW -->
+    <div class="view" id="view-achievements">
+        <h1 class="dash-welcome">Achievements 🏆</h1>
+        <p class="dash-sub">Unlock badges by completing tasks!</p>
+        <div class="badge-grid" id="badgeGrid"></div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchView('dashboard', this)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>
+            Home
+        </button>
+        <button class="nav-item" onclick="switchView('learn', this)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17zM12 3L1 9l11 6 9-4.91V17h2V9z"/></svg>
+            Learn
+        </button>
+        <button class="nav-item" onclick="switchView('interview', this)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M12 14c1.66 0 3-1.34 3-3V7c0-1.66-1.34-3-3-3s-3 1.34-3 3v4c0 1.66 1.34 3 3 3z"/></svg>
+            Practice
+        </button>
+        <button class="nav-item" onclick="switchView('roadmap', this)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>
+            Map
+        </button>
+        <button class="nav-item" onclick="switchView('achievements', this)">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2z"/></svg>
+            Awards
+        </button>
+    </nav>
+</div>
+
+<!-- PROCESSING OVERLAY -->
+<div id="processingOverlay" class="processing-overlay">
+    <div class="orbit-card">
+        <div class="orbit-wrap">
+            <div class="orbit-ring"></div>
+            <div class="orbit-spin">
+                <div class="orbit-icon orbit-top">📄<span style="font-size:8px; display:block;">RESUME</span></div>
+                <div class="orbit-icon orbit-right">🎯<span style="font-size:8px; display:block;">MATCH</span></div>
+                <div class="orbit-icon orbit-bottom">🧠<span style="font-size:8px; display:block;">AI</span></div>
+            </div>
+            <div class="orbit-center"><span>A✨</span></div>
+        </div>
+        <h3>Apply.X is working...</h3>
+        <p style="color:var(--axf-muted); font-size:14px;">Our AI is analyzing your resume, matching your skills, and preparing your career profile.</p>
+        <div class="steps-box">
+            <div class="step-row"><span>📄 Reading Resume</span><span id="step1status">⏳</span></div>
+            <div class="step-row"><span>🔍 Analyzing Skills</span><span id="step2status">⏳</span></div>
+            <div class="step-row"><span>📊 Calculating ATS</span><span id="step3status">⏳</span></div>
+            <div class="step-row"><span>🎯 Job Match</span><span id="step4status">⏳</span></div>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="orbitProgressFill"></div></div>
+    </div>
+</div>
+
+<!-- CELEBRATION OVERLAY -->
+<div class="celebration" id="celebration"></div>
+
+<!-- LEVEL UP MODAL -->
+<div class="levelup-overlay" id="levelUpModal">
+    <div class="levelup-card">
+        <div class="levelup-icon">🎉</div>
+        <h2 class="levelup-title">Level Up!</h2>
+        <p class="levelup-sub" id="levelUpText">You reached Level 2!</p>
+        <button class="levelup-btn" onclick="closeLevelUp()">Awesome!</button>
+    </div>
+</div>
+
+<!-- GENERIC MODAL FOR LEARN HUB, OUTREACH, TECH NEWS -->
+<div class="modal-overlay" id="genericModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Modal Title</h3>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// GLOBAL STATE & CONFIG (Single Source of Truth)
+// ==========================================
+let currentTargetJob = "";
+let currentResumeData = {};
+let currentTplId = 1;
+let reportData = { name: "", atsScore: 0, matchPercent: 0, topMissing: [], interviewScore: 0, networkingScore: 0, techQuizScore: 0 };
+
+let appState = {
+    xp: 0,
+    level: 1,
+    streak: 1,
+    skillsCompleted: 0,
+    interviewsCompleted: 0,
+    achievements: [],
+    roadmapProgress: [false, false, false, false, false],
+    careerReadiness: 0,
+    outreachCompletedToday: false,
+    techNewsCompletedToday: false
+};
+
+let interviewState = {
+    type: "Intermediate",
+    category: "HR",
+    questionIndex: 0,
+    questions: [],
+    answers: []
+};
+
+let selectedMsgType = "Connection Request"; // For Outreach
+
+// ==========================================
+// FIREBASE & AUTH (Preserved Original)
+// ==========================================
+const firebaseConfig = {
+    apiKey: "AIzaSyD073SXcxTy4vrIe_VB05PKrTHCsuKVH_c",
+    authDomain: "applyx-b835f.firebaseapp.com",
+    projectId: "applyx-b835f",
+    storageBucket: "applyx-b835f.firebasestorage.app",
+    messagingSenderId: "830130025091",
+    appId: "1:830130025091:web:f2b176aefc763826c261b6"
+};
+try {
+    firebase.initializeApp(firebaseConfig);
+    var auth = firebase.auth();
+} catch(e) { console.error("Firebase Init Error:", e); }
+
+function openAuth(view) {
+    document.getElementById('authModal').classList.add('show');
+    document.getElementById('authErrorMsg').style.display = 'none';
+    toggleAuth(view);
+}
+function closeAuth() { document.getElementById('authModal').classList.remove('show'); }
+function toggleAuth(view) {
+    if (view === 'login') {
+        document.getElementById('loginView').style.display = 'block';
+        document.getElementById('signupView').style.display = 'none';
+    } else {
+        document.getElementById('loginView').style.display = 'none';
+        document.getElementById('signupView').style.display = 'block';
+    }
+}
+function showAuthError(msg) {
+    const errDiv = document.getElementById('authErrorMsg');
+    errDiv.innerText = msg;
+    errDiv.style.display = 'block';
+}
+function handleSignUp() {
+    const name = document.getElementById('su_name').value;
+    const email = document.getElementById('su_email').value;
+    const password = document.getElementById('su_password').value;
+    if (!name || !email || !password) return showAuthError("Please fill all fields.");
+    if (password.length < 6) return showAuthError("Password must be at least 6 characters.");
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(cred => { cred.user.updateProfile({ displayName: name }); closeAuth(); })
+        .catch(err => showAuthError(err.message));
+}
+function handleLogin() {
+    const email = document.getElementById('li_email').value;
+    const password = document.getElementById('li_password').value;
+    if (!email || !password) return showAuthError("Please enter email and password.");
+    auth.signInWithEmailAndPassword(email, password)
+        .then(cred => closeAuth())
+        .catch(err => showAuthError("Invalid credentials."));
+}
+function handleGoogleLogin() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithRedirect(provider);
+}
+if (typeof auth !== 'undefined' && auth) {
+    auth.getRedirectResult().then(result => { if(result.user) closeAuth(); }).catch(err => console.error(err));
+}
+
+// ==========================================
+// CORE LOGIC & API CALLS (FIXED SYNTAX)
+// ==========================================
+function fetchWithTimeout(url, options, timeoutMs = 120000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+}
+
+function generateEverything() {
+    const name = document.getElementById('name').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const linkedin = document.getElementById('linkedin').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const education = document.getElementById('education').value.trim();
+    const skills = document.getElementById('skills').value.trim();
+    const experience = document.getElementById('experience').value.trim();
+    const target_job = document.getElementById('target_job').value.trim();
+    const errorEl = document.getElementById('formError');
+
+    if (!name || !skills || !target_job) {
+        errorEl.innerText = "Please fill at least Name, Skills, and Target Job.";
+        errorEl.style.display = "block";
+        return;
+    }
+
+    errorEl.style.display = "none";
+    currentTargetJob = target_job;
+    currentResumeData = { name, phone, email, linkedin, address, education, skills, experience, target_job, summary: "" };
+    reportData.name = name;
+    reportData.topMissing = ["Communication", "Teamwork", "Problem Solving", "Leadership", "Critical Thinking"]; 
+
+    const payload = { name, phone, email, linkedin, address, education, skills, experience, target_job };
+
+    // Show Processing
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('processingOverlay').style.display = 'flex';
+    
+    setTimeout(() => {
+        document.getElementById('processingOverlay').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        document.getElementById('targetJobRole').innerText = target_job;
+        document.getElementById('roadmapJob').innerText = target_job;
+        document.getElementById('dashUserName').innerText = `Let's boost your career, ${name}!`;
+        
+        renderResumeTemplate(1);
+        updateRoadmap(0, true); // Silently update roadmap step 1
+        addXP(200, "Resume Created", true);
+        unlockBadge("first_resume", "First Resume", true);
+        syncEcosystem(); // Central Sync
+        
+        // Trigger API calls
+        fetchAPICalls(payload);
+        loadDailyChallenges();
+    }, 3000); // Simulating 3 sec load
+}
+
+function fetchAPICalls(payload) {
+    // 1. BUILD RESUME
+    fetchWithTimeout('/build-resume', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.error) {
+            currentResumeData.summary = data.summary;
+            renderResumeTemplate(currentTplId);
+        }
+    })
+    .catch(err => console.error("Resume Error:", err));
+
+    // 2. SKILL GAP
+    fetchWithTimeout('/skill-gap', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.error) {
+            try {
+                const parsed = JSON.parse(data.result);
+                reportData.topMissing = parsed.missing_skills.map(m => m.skill);
+                syncEcosystem();
+            } catch (e) { console.error("Parse error skill gap"); }
+        }
+    })
+    .catch(err => console.error("Skill Gap Error:", err));
+
+    // 3. JOB MATCH
+    fetchWithTimeout('/job-match', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.error) {
+            try {
+                const parsed = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
+                reportData.matchPercent = parsed.match_percent || 75;
+                syncEcosystem();
+                addXP(50, "Job Match Analyzed");
+            } catch (e) { console.error("Parse error match"); }
+        }
+    })
+    .catch(err => console.error("Match Error:", err));
+
+    // 4. ATS SCORE
+    fetchWithTimeout('/ats-score', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.error) {
+            try {
+                const p = JSON.parse(data.result);
+                reportData.atsScore = p.ats_score || 80;
+                syncEcosystem();
+                addXP(50, "ATS Score Generated");
+            } catch (e) { console.error("Parse error ats"); }
+        }
+    })
+    .catch(err => console.error("ATS Error:", err));
+}
+
+// ==========================================
+// RESUME TEMPLATES (Existing Feature Preserved)
+// ==========================================
+function renderResumeTemplate(tplId) {
+    currentTplId = tplId;
+    document.querySelectorAll('#view-resume .tpl-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === tplId - 1);
+    });
+    
+    const d = currentResumeData;
+    const skillsList = d.skills ? d.skills.split(",").map(s => s.trim()).filter(Boolean) : [];
+    const expHtml = d.experience ? `<p>${d.experience.replace(/\n/g, '<br>')}</p>` : "<p>No experience added yet.</p>";
+    const eduHtml = d.education || "Not Provided";
+    const summaryHtml = d.summary || "Professional summary will appear here.";
+    
+    let html = '';
+
+    if (tplId === 1) {
+        html = `
+        <div class="ats-header">
+            <h1>${d.name}</h1>
+            <p class="ats-role">${d.target_job}</p>
+            <div class="ats-contact">
+                ${d.email ? `<span>✉️ ${d.email}</span>` : ""}
+                ${d.phone ? `<span>📞 ${d.phone}</span>` : ""}
+                ${d.address ? `<span>📍 ${d.address}</span>` : ""}
+            </div>
+        </div>
+        <div class="ats-section"><h2>Summary</h2><p>${summaryHtml}</p></div>
+        <div class="ats-section"><h2>Skills</h2><div class="ats-skills">${skillsList.map(s=>`<span>${s}</span>`).join("")}</div></div>
+        <div class="ats-section"><h2>Experience</h2>${expHtml}</div>
+        <div class="ats-section"><h2>Education</h2><p>${eduHtml}</p></div>`;
+    } else if (tplId === 2) {
+        html = `
+        <div style="display:flex; gap:15px;">
+            <div style="width:30%; background:#F8FAFC; padding:15px; border-radius:8px;">
+                <div style="width:60px; height:60px; background:#4F7CFF; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold; margin-bottom:10px;">${d.name ? d.name[0] : 'A'}</div>
+                <h3 style="font-size:12px; margin:5px 0;">Contact</h3>
+                <p style="font-size:10px; color:#6b7280;">${d.email || ''}<br>${d.phone || ''}</p>
+                <h3 style="font-size:12px; margin:10px 0;">Skills</h3>
+                <p style="font-size:10px; color:#6b7280;">${skillsList.join(", ")}</p>
+            </div>
+            <div style="width:70%;">
+                <h1 style="font-size:20px; margin:0;">${d.name}</h1>
+                <p style="font-size:12px; color:#4F7CFF; margin:2px 0 10px;">${d.target_job}</p>
+                <h3 style="font-size:14px; margin:10px 0;">Summary</h3>
+                <p style="font-size:11px; color:#374151;">${summaryHtml}</p>
+                <h3 style="font-size:14px; margin:10px 0;">Experience</h3>
+                <p style="font-size:11px; color:#374151;">${d.experience || 'Not Provided'}</p>
+            </div>
+        </div>`;
+    } else if (tplId === 3) {
+        html = `
+        <div style="text-align:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:15px;">
+            <h1 style="font-size:24px; margin:0; text-transform:uppercase; letter-spacing:2px;">${d.name}</h1>
+            <p style="font-size:12px; color:#6b7280; margin:5px 0;">${d.target_job}</p>
+        </div>
+        <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Summary</h3>
+        <p style="font-size:12px; color:#374151;">${summaryHtml}</p>
+        <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Experience</h3>
+        <p style="font-size:12px; color:#374151;">${d.experience || 'Not Provided'}</p>
+        <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Skills</h3>
+        <p style="font-size:12px; color:#374151;">${skillsList.join(" • ")}</p>`;
+    } else if (tplId === 4) {
+         html = `
+        <div style="background:#1a1a2e; color:white; padding:15px; border-radius:8px 8px 0 0;">
+            <h1 style="font-size:22px; margin:0;">${d.name}</h1>
+            <p style="font-size:12px; color:#8A4DFF; margin:5px 0;">${d.target_job}</p>
+        </div>
+        <div style="padding:15px;">
+            <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Summary</h3>
+            <p style="font-size:12px; color:#374151;">${summaryHtml}</p>
+            <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Experience</h3>
+            <p style="font-size:12px; color:#374151;">${d.experience || 'Not Provided'}</p>
+        </div>`;
+    } else {
+        html = `
+        <div style="text-align:center; margin-bottom:15px;">
+            <h1 style="font-size:22px; margin:0; color:#8A4DFF;">${d.name}</h1>
+            <p style="font-size:13px; color:#6b7280; margin:5px 0;">${d.target_job}</p>
+        </div>
+        <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">🎓 Education</h3>
+        <p style="font-size:12px; color:#374151;">${eduHtml}</p>
+        <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">💼 Experience</h3>
+        <p style="font-size:12px; color:#374151;">${d.experience || 'Not Provided'}</p>
+        <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">⚡ Skills</h3>
+        <div class="ats-skills">${skillsList.map(s=>`<span style="background:#F3E8FF; color:#8A4DFF;">${s}</span>`).join("")}</div>`;
+    }
+    document.getElementById('resumeOutput').innerHTML = html;
+}
+
+// ==========================================
+// FEATURE 1: AI SKILL GAP → LEARN HUB
+// ==========================================
+function renderLearnView() {
+    const learnList = document.getElementById('learnList');
+    if (!learnList) return;
+    
+    if (reportData.topMissing.length === 0) {
+        learnList.innerHTML = `<div class="glass-card" style="text-align:center; color:var(--axf-muted);">Please generate your resume first to see skill recommendations.</div>`;
+        return;
+    }
+
+    const priorities = ["High", "Medium", "Easy"];
+    const colors = ["#EF4444", "#F59E0B", "#22C55E"];
+    
+    document.getElementById('statSkills').innerText = `${appState.skillsCompleted}/${reportData.topMissing.length}`;
+    
+    learnList.innerHTML = reportData.topMissing.map((skill, i) => {
+        const isCompleted = i < appState.skillsCompleted;
+        return `
+        <div class="glass-card" id="skill-card-${i}" style="${isCompleted ? 'opacity: 0.6;' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h4 style="margin:0; font-size:16px;">${skill}</h4>
+                <span style="font-size:10px; font-weight:700; padding:4px 8px; border-radius:10px; color:${colors[i%3]}; background:${colors[i%3]}20;">${priorities[i%3]} Priority</span>
+            </div>
+            <p style="font-size:12px; color:var(--axf-muted); margin:0 0 10px;">Learn this skill to improve your Job Match by ${5+i*2}%</p>
+            ${isCompleted ? 
+                `<div style="text-align:center; color:#22C55E; font-weight:700; padding:10px;">✅ Completed!</div>` :
+                `<div style="display:flex; gap:10px;">
+                    <button class="action-btn btn-secondary" style="flex:1; padding:10px; font-size:12px; margin:0;" onclick="openLearnHub(${i})">📚 Learn</button>
+                    <button class="action-btn btn-primary" style="flex:1; padding:10px; font-size:12px; margin:0;" onclick="completeSkill(${i})">✅ Complete</button>
+                </div>`
+            }
+        </div>`;
+    }).join("");
+}
+
+function openLearnHub(id) {
+    const skill = reportData.topMissing[id];
+    document.getElementById('modalTitle').innerText = `Learn: ${skill}`;
+    
+    // Simulated AI Learning Hub Content
+    document.getElementById('modalContent').innerHTML = `
+        <div style="margin-bottom:20px;">
+            <h4 style="margin:0 0 5px; font-size:14px; color:var(--axf-muted);">SKILL OVERVIEW</h4>
+            <p style="font-size:14px; margin:0;">${skill} is crucial for ${currentTargetJob} roles. It helps in solving complex problems and improving efficiency.</p>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">FREE RESOURCES</h4>
+            <a href="#" class="resource-link"><div class="resource-icon">▶️</div> YouTube: Mastering ${skill} (45 min)</a>
+            <a href="#" class="resource-link"><div class="resource-icon">📄</div> Official Documentation</a>
+            <a href="#" class="resource-link"><div class="resource-icon">💻</div> Free Code Camp Course</a>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">AI LEARNING PATH</h4>
+            <div class="roadmap-track" style="padding-left:20px;">
+                <div class="roadmap-step completed"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">1</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Learn Basics</h4></div></div>
+                <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">2</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Practice 5 Problems</h4></div></div>
+                <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">3</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Build Mini Project</h4></div></div>
+                <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">4</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Interview Questions</h4></div></div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">MINI QUIZ</h4>
+            <p style="font-size:14px; margin:0 0 10px;">What is the primary use of ${skill}?</p>
+            <div class="quiz-option" onclick="selectQuizOption(this)">A. To make coffee</div>
+            <div class="quiz-option" onclick="selectQuizOption(this)">B. To solve complex problems</div>
+            <div class="quiz-option" onclick="selectQuizOption(this)">C. To design UI</div>
+        </div>
+
+        <button class="action-btn btn-primary" onclick="closeModal(); completeSkill(${id});">Finish & Mark Complete</button>
+    `;
+    openModal();
+}
+
+function selectQuizOption(el) {
+    const parent = el.parentElement;
+    parent.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+function completeSkill(id) {
+    let card = document.getElementById(`skill-card-${id}`);
+    if (card) {
+        card.style.opacity = "0.5";
+        card.innerHTML = `<h4 style="margin:0; color:#22C55E;">✅ ${reportData.topMissing[id]} Completed!</h4>`;
+    }
+    
+    appState.skillsCompleted++;
+    
+    // Increase ATS Score dynamically
+    reportData.atsScore = Math.min(100, reportData.atsScore + 5);
+    // Increase Job Match dynamically
+    reportData.matchPercent = Math.min(100, reportData.matchPercent + 10);
+    
+    // If all skills completed, unlock roadmap step 2
+    if (appState.skillsCompleted === reportData.topMissing.length) {
+        updateRoadmap(2, false);
+    }
+    
+    addXP(100, "Skill Completed");
+    syncEcosystem();
+    closeModal();
+}
+
+// ==========================================
+// FEATURE 2: AI MOCK INTERVIEW
+// ==========================================
+function selectInterviewType(type) {
+    interviewState.type = type;
+    document.querySelectorAll('#interviewSetup .tpl-btn').forEach((btn, i) => {
+        if(i < 3) btn.classList.toggle('active', i === ['Beginner', 'Intermediate', 'Advanced'].indexOf(type));
+    });
+}
+function selectInterviewCat(cat) {
+    interviewState.category = cat;
+    document.querySelectorAll('#interviewSetup .tpl-btn').forEach((btn, i) => {
+        if(i >= 3) btn.classList.toggle('active', i-3 === ['HR', 'Technical', 'Behavioral'].indexOf(cat));
+    });
+}
+
+function startInterview() {
+    document.getElementById('interviewSetup').style.display = 'none';
+    document.getElementById('interviewChat').style.display = 'block';
+    
+    interviewState.questions = [
+        `Tell me about yourself for a ${currentTargetJob} role.`,
+        `Why do you want to work in this company?`,
+        `Explain a challenging project you worked on recently.`,
+        `Where do you see yourself in 5 years?`,
+        `Do you have any questions for us?`
+    ];
+    
+    interviewState.questionIndex = 0;
+    interviewState.answers = [];
+    document.getElementById('chatBox').innerHTML = '';
+    askNextQuestion();
+}
+
+function askNextQuestion() {
+    if (interviewState.questionIndex < interviewState.questions.length) {
+        const chatBox = document.getElementById('chatBox');
+        let bubble = document.createElement('div');
+        bubble.className = 'chat-bubble chat-ai';
+        bubble.innerText = `🤖 AI: ${interviewState.questions[interviewState.questionIndex]}`;
+        chatBox.appendChild(bubble);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } else {
+        finishInterview();
+    }
+}
+
+function submitAnswer() {
+    const input = document.getElementById('answerInput');
+    if (!input.value.trim()) return;
+    
+    let chatBox = document.getElementById('chatBox');
+    let bubble = document.createElement('div');
+    bubble.className = 'chat-bubble chat-user';
+    bubble.innerText = input.value;
+    chatBox.appendChild(bubble);
+    
+    interviewState.answers.push(input.value);
+    input.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+    
+    interviewState.questionIndex++;
+    setTimeout(askNextQuestion, 500);
+}
+
+function finishInterview() {
+    document.getElementById('interviewChat').style.display = 'none';
+    let resultDiv = document.getElementById('interviewResult');
+    resultDiv.style.display = 'block';
+    
+    let score = Math.floor(Math.random() * 30) + 70; 
+    reportData.interviewScore = score;
+    
+    resultDiv.innerHTML = `
+        <div class="glass-card" style="text-align:center;">
+            <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
+            <h3 style="margin:0; font-size:22px;">Interview Complete!</h3>
+            <p style="color:var(--axf-muted); margin:5px 0 20px;">Here is your AI performance analysis</p>
+            
+            <div style="background:#F8FAFC; padding:15px; border-radius:16px; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Overall Score</span><b>${score}/100</b></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Confidence</span><b>${score-10}%</b></div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Communication</span><b>${score-5}%</b></div>
+                <div style="display:flex; justify-content:space-between;"><span>Grammar</span><b>${score}%</b></div>
+            </div>
+            
+            <div style="text-align:left; margin-bottom:20px;">
+                <p style="color:#22C55E; font-weight:bold;">✔ Strong Points:</p>
+                <p style="font-size:13px; color:var(--axf-muted);">Good structure in answers. Clear communication.</p>
+                
+                <p style="color:#EF4444; font-weight:bold; margin-top:10px;">✔ Weak Points:</p>
+                <p style="font-size:13px; color:var(--axf-muted);">Could use more technical examples. Try to quantify achievements.</p>
+            </div>
+            
+            <button class="action-btn btn-primary" onclick="resetInterview()">Finish & Claim XP</button>
+        </div>
+    `;
+    
+    appState.interviewsCompleted++;
+    updateRoadmap(3, false); // Unlock roadmap step 3
+    addXP(150, "Interview Completed");
+    syncEcosystem();
+}
+
+function resetInterview() {
+    document.getElementById('interviewResult').style.display = 'none';
+    document.getElementById('interviewResult').innerHTML = '';
+    document.getElementById('interviewSetup').style.display = 'block';
+    switchView('dashboard', document.querySelectorAll('.nav-item')[0]);
+}
+
+// ==========================================
+// FEATURE 3: CAREER ROADMAP
+// ==========================================
+function renderRoadmap() {
+    const steps = [
+        { icon: "📄", title: "Resume Creation", desc: "Build your AI optimized resume." },
+        { icon: "🎯", title: "ATS & Job Match", desc: "Analyze your current score." },
+        { icon: "🚀", title: "Skill Learning", desc: "Complete missing skills." },
+        { icon: "🎤", title: "Mock Interview", desc: "Practice your interview skills." },
+        { icon: "🏆", title: "Career Ready", desc: "Apply for jobs with confidence!" }
+    ];
+    
+    document.getElementById('roadmapTrack').innerHTML = steps.map((s, i) => `
+        <div class="roadmap-step ${appState.roadmapProgress[i] ? 'completed' : ''}" id="roadmap-${i}">
+            <div class="roadmap-dot">${appState.roadmapProgress[i] ? '✓' : s.icon}</div>
+            <div class="roadmap-content">
+                <h4>${s.title}</h4>
+                <p>${s.desc}</p>
+                ${!appState.roadmapProgress[i] && i > 0 && appState.roadmapProgress[i-1] ? `<button class="action-btn btn-success" style="padding:8px; font-size:12px; margin:0;" onclick="completeRoadmapStep(${i})">Mark Complete</button>` : ''}
+                ${appState.roadmapProgress[i] ? `<span style="color:#22C55E; font-size:12px; font-weight:700;">Completed! +100 XP</span>` : ''}
+            </div>
+        </div>
+    `).join("");
+}
+
+function updateRoadmap(index, silent) {
+    if (!appState.roadmapProgress[index]) {
+        appState.roadmapProgress[index] = true;
+        if (index === 4) {
+            unlockBadge("career_ready", "Career Ready");
+        }
+        renderRoadmap();
+        if (!silent) {
+            addXP(100, "Milestone Reached");
+            syncEcosystem();
+        }
+    }
+}
+
+function completeRoadmapStep(index) {
+    updateRoadmap(index, false);
+}
+
+// ==========================================
+// FEATURE 4: XP, STREAK & ACHIEVEMENTS
+// ==========================================
+function addXP(amount, reason, silent) {
+    let prevLevel = appState.level;
+    appState.xp += amount;
+    
+    while (appState.xp >= 1000) {
+        appState.xp -= 1000;
+        appState.level++;
+    }
+    
+    if (!silent) {
+        triggerCelebration();
+    }
+    
+    if (appState.level > prevLevel) {
+        showLevelUp(appState.level);
+        if (appState.level >= 5) unlockBadge("1000_xp", "1000 XP");
+        if (appState.level >= 10) unlockBadge("5000_xp", "5000 XP");
+    }
+    
+    syncEcosystem();
+    
+    if (appState.xp >= 5000) unlockBadge("5000_xp", "5000 XP");
+    if (appState.skillsCompleted >= 1) unlockBadge("skill_master", "Skill Master");
+    if (appState.interviewsCompleted >= 1) unlockBadge("interview_master", "Interview Master");
+}
+
+function unlockBadge(id, name, silent) {
+    if (!appState.achievements.includes(id)) {
+        appState.achievements.push(id);
+        renderBadges();
+        if (!silent) {
+            triggerCelebration();
+        }
+    }
+}
+
+function renderBadges() {
+    const allBadges = [
+        { id: "first_resume", icon: "📄", name: "First Resume" },
+        { id: "ats_expert", icon: "📈", name: "ATS Expert" },
+        { id: "skill_master", icon: "🚀", name: "Skill Master" },
+        { id: "interview_master", icon: "🎤", name: "Interview Pro" },
+        { id: "7_day_streak", icon: "🔥", name: "7 Day Streak" },
+        { id: "career_ready", icon: "🏆", name: "Career Ready" },
+        { id: "1000_xp", icon: "⭐", name: "1000 XP" },
+        { id: "5000_xp", icon: "💎", name: "5000 XP" },
+        { id: "roadmap_done", icon: "🗺️", name: "Map Master" },
+        { id: "networking_pro", icon: "🤝", name: "Network Pro" },
+        { id: "tech_news_master", icon: "📰", name: "News Master" }
+    ];
+    
+    document.getElementById('badgeGrid').innerHTML = allBadges.map(b => `
+        <div class="badge-card ${appState.achievements.includes(b.id) ? 'unlocked' : ''}">
+            <div class="badge-icon">${b.icon}</div>
+            <div class="badge-name">${b.name}</div>
+        </div>
+    `).join("");
+}
+
+function triggerCelebration() {
+    let celeb = document.getElementById('celebration');
+    celeb.innerHTML = '';
+    for(let i=0; i<30; i++) {
+        let c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + '%';
+        c.style.background = ['#4F7CFF', '#8A4DFF', '#22C55E', '#F59E0B'][Math.floor(Math.random()*4)];
+        c.style.animationDelay = Math.random() * 2 + 's';
+        celeb.appendChild(c);
+    }
+    celeb.classList.add('show');
+    setTimeout(() => celeb.classList.remove('show'), 2000);
+}
+
+function showLevelUp(level) {
+    document.getElementById('levelUpText').innerText = `You reached Level ${level}!`;
+    document.getElementById('levelUpModal').style.display = 'flex';
+}
+
+function closeLevelUp() {
+    document.getElementById('levelUpModal').style.display = 'none';
+}
+
+// ==========================================
+// CENTRAL ECOSYSTEM SYNC (Single Source of Truth)
+// ==========================================
+function syncEcosystem() {
+    // 1. Calculate Career Readiness
+    let skillsRatio = reportData.topMissing.length > 0 ? (appState.skillsCompleted / reportData.topMissing.length) * 100 : 100;
+    let interviewScore = reportData.interviewScore || 0;
+    let networkScore = reportData.networkingScore || 0;
+    let techScore = reportData.techQuizScore || 0;
+    
+    appState.careerReadiness = Math.floor((reportData.atsScore + reportData.matchPercent + skillsRatio + interviewScore + networkScore + techScore) / 6);
+
+    // 2. Update Dashboard UI
+    document.getElementById('userLevel').innerText = `Level ${appState.level}`;
+    document.getElementById('currentXP').innerText = appState.xp;
+    document.getElementById('xpBarFill').style.width = (appState.xp / 1000) * 100 + '%';
+    document.getElementById('topStreakBadge').innerText = `🔥 ${appState.streak}`;
+    document.getElementById('userStreak').innerText = `${appState.streak} Day`;
+    
+    document.getElementById('statATS').innerText = reportData.atsScore;
+    document.getElementById('statMatch').innerText = reportData.matchPercent + '%';
+    document.getElementById('statSkills').innerText = `${appState.skillsCompleted}/${reportData.topMissing.length}`;
+    document.getElementById('statInterview').innerText = appState.interviewsCompleted;
+
+    // Update Readiness Ring
+    document.getElementById('readinessScore').innerText = appState.careerReadiness + '%';
+    const circumference = 2 * Math.PI * 50;
+    const offset = circumference - (appState.careerReadiness / 100) * circumference;
+    document.getElementById('readinessCircle').style.strokeDashoffset = offset;
+
+    // 3. Update Dynamic Daily Missions
+    generateDailyMissions();
+
+    // 4. Update Learn View if visible
+    if (document.getElementById('view-learn').classList.contains('active')) {
+        renderLearnView();
+    }
+
+    // 5. Update Roadmap if visible
+    if (document.getElementById('view-roadmap').classList.contains('active')) {
+        renderRoadmap();
+    }
+
+    // 6. Update Report View if visible
+    if (document.getElementById('view-report').classList.contains('active')) {
+        renderReport();
+    }
+
+    // 7. Check Final Roadmap Completion
+    if (appState.careerReadiness >= 80 && !appState.roadmapProgress[4]) {
+        updateRoadmap(4, false);
+    }
+}
+
+// ==========================================
+// DYNAMIC DAILY CAREER BOOST
+// ==========================================
+function generateDailyMissions() {
+    const missionDiv = document.getElementById('dailyMissions');
+    let missions = [];
+
+    // Mission 1: Skill Gap
+    if (appState.skillsCompleted < reportData.topMissing.length) {
+        missions.push({
+            icon: "🚀",
+            title: "Learn a Skill",
+            desc: `Complete ${reportData.topMissing[appState.skillsCompleted] || 'a skill'} to boost match`,
+            action: "switchView('learn', document.querySelectorAll('.nav-item')[1])"
+        });
+    }
+
+    // Mission 2: Interview Practice
+    if (appState.interviewsCompleted < 3) {
+        missions.push({
+            icon: "🎤",
+            title: "Practice Interview",
+            desc: "Complete 1 Mock Interview today",
+            action: "switchView('interview', document.querySelectorAll('.nav-item')[2])"
+        });
+    }
+
+    // Mission 3: ATS Optimization
+    if (reportData.atsScore < 90) {
+        missions.push({
+            icon: "📈",
+            title: "Improve ATS Score",
+            desc: "Review resume and add more keywords",
+            action: "switchView('resume', document.querySelectorAll('.nav-item')[0])"
+        });
+    }
+
+    missionDiv.innerHTML = missions.slice(0, 2).map(m => `
+        <div class="mission-card">
+            <div class="mission-icon">${m.icon}</div>
+            <div class="mission-text">
+                <h4>${m.title}</h4>
+                <p>${m.desc}</p>
+            </div>
+            <button class="mission-btn" onclick="${m.action}">GO</button>
+        </div>
+    `).join("");
+}
+
+// ==========================================
+// DYNAMIC CAREER REPORT
+// ==========================================
+function renderReport() {
+    const reportContent = document.getElementById('reportContent');
+    const skillsRatio = reportData.topMissing.length > 0 ? (appState.skillsCompleted / reportData.topMissing.length) * 100 : 100;
+    
+    reportContent.innerHTML = `
+        <div class="glass-card report-header">
+            <h1>${reportData.name}'s Career Report</h1>
+            <p style="color:var(--axf-muted); margin:5px 0 0;">Generated dynamically based on your live progress.</p>
+        </div>
+
+        <div class="glass-card report-section">
+            <h3>📊 Live Scores</h3>
+            <div class="report-stat"><span>Overall Readiness</span><b>${appState.careerReadiness}%</b></div>
+            <div class="report-stat"><span>ATS Score</span><b>${reportData.atsScore}/100</b></div>
+            <div class="report-stat"><span>Job Match</span><b>${reportData.matchPercent}%</b></div>
+            <div class="report-stat"><span>Interview Readiness</span><b>${reportData.interviewScore}/100</b></div>
+            <div class="report-stat"><span>Networking Score</span><b>${reportData.networkingScore}/100</b></div>
+            <div class="report-stat" style="border:none;"><span>Tech News Quiz</span><b>${reportData.techQuizScore}/100</b></div>
+        </div>
+
+        <div class="glass-card report-section">
+            <h3>🚀 Skill Gap Status</h3>
+            ${reportData.topMissing.length > 0 ? reportData.topMissing.map((s, i) => `
+                <div style="margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+                        <span>${s}</span>
+                        <span>${i < appState.skillsCompleted ? '✅ Completed' : '⏳ Pending'}</span>
+                    </div>
+                    <div class="progress-track" style="margin:0;"><div class="progress-fill" style="width:${i < appState.skillsCompleted ? 100 : 0}%; background:${i < appState.skillsCompleted ? '#22C55E' : '#E5E7EB'};"></div></div>
+                </div>
+            `).join("") : "<p>No skill gaps detected!</p>"}
+        </div>
+
+        <div class="glass-card report-section">
+            <h3>🗺️ Roadmap Progress</h3>
+            ${appState.roadmapProgress.map((done, i) => `
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:14px;">
+                    <span style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; ${done ? 'background:#22C55E; color:white;' : 'background:#E5E7EB;'}">${done ? '✓' : i+1}</span>
+                    <span>${['Resume Creation', 'ATS & Job Match', 'Skill Learning', 'Mock Interview', 'Career Ready'][i]}</span>
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
+// ==========================================
+// AI DAILY OUTREACH CHALLENGE (ADVANCED)
+// ==========================================
+function loadDailyChallenges() {
+    // Simulate AI loading a dummy profile dynamically
+    document.getElementById('outreachDesc').innerText = "Target: Alex Chen, Hiring Manager at Stripe. Choose your message type and craft the perfect pitch.";
+    document.getElementById('techNewsDesc').innerText = "Today's Topic: Real-time AI hiring trends and industry updates.";
+}
+
+function startOutreachChallenge() {
+    document.getElementById('modalTitle').innerText = "🤝 Advanced Outreach Simulator";
+    document.getElementById('modalContent').innerHTML = `
+        <div class="glass-card" style="background:#F8FAFC; margin-bottom:15px;">
+            <h4 style="margin:0 0 5px;">Target Profile</h4>
+            <p style="margin:0; font-size:14px;"><b>Alex Chen</b></p>
+            <p style="margin:0; font-size:12px; color:var(--axf-muted);">Hiring Manager at Stripe</p>
+            <p style="margin:5px 0 0; font-size:12px; color:var(--axf-muted);">Hiring for: ${currentTargetJob || 'Software Engineer'}</p>
+            <p style="margin:5px 0 0; font-size:12px; color:var(--axf-muted);">Bio: Ex-Google, loves open-source projects.</p>
+        </div>
+        
+        <p style="font-size:14px; margin:0 0 10px; font-weight:700;">1. Select Message Type:</p>
+        <div style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+            <button class="tpl-btn active" onclick="selectMsgType('Connection', this)">Connection Request</button>
+            <button class="tpl-btn" onclick="selectMsgType('Referral', this)">Referral Request</button>
+            <button class="tpl-btn" onclick="selectMsgType('Follow-up', this)">Follow-up</button>
+        </div>
+        
+        <p style="font-size:14px; margin:0 0 10px; font-weight:700;">2. Draft Your Message:</p>
+        <textarea id="outreachInput" class="input-field" placeholder="Write your personalized message here..." rows="5"></textarea>
+        
+        <button class="action-btn btn-primary" onclick="submitOutreach()">Analyze with AI</button>
+    `;
+    openModal();
+}
+
+function selectMsgType(type, btn) {
+    selectedMsgType = type;
+    document.querySelectorAll('#modalContent .tpl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function submitOutreach() {
+    const msg = document.getElementById('outreachInput').value;
+    if(msg.length < 20) {
+        alert("Please write a more detailed message (min 20 chars).");
+        return;
+    }
+
+    // Simulate Advanced AI Evaluation
+    let score = Math.floor(Math.random() * 20) + 75; 
+    reportData.networkingScore = score;
+    appState.outreachCompletedToday = true;
+    
+    let replyChance = Math.min(98, score + Math.floor(Math.random() * 10));
+
+    document.getElementById('modalContent').innerHTML = `
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+            <h3 style="margin:0; font-size:22px;">AI Analysis Complete!</h3>
+            <div style="background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color:white; padding:10px; border-radius:12px; margin:10px 0; font-weight:700;">
+                Estimated Reply Chance: ${replyChance}%
+            </div>
+        </div>
+
+        <div style="background:#F8FAFC; padding:15px; border-radius:16px; margin-bottom:15px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                <div style="text-align:center; padding:10px; background:white; border-radius:8px;">
+                    <p style="margin:0; font-size:10px; color:var(--axf-muted);">TONE</p>
+                    <p style="margin:5px 0 0; font-size:14px; font-weight:700;">Professional</p>
+                </div>
+                <div style="text-align:center; padding:10px; background:white; border-radius:8px;">
+                    <p style="margin:0; font-size:10px; color:var(--axf-muted);">CLARITY</p>
+                    <p style="margin:5px 0 0; font-size:14px; font-weight:700;">High</p>
+                </div>
+                <div style="text-align:center; padding:10px; background:white; border-radius:8px;">
+                    <p style="margin:0; font-size:10px; color:var(--axf-muted);">CONFIDENCE</p>
+                    <p style="margin:5px 0 0; font-size:14px; font-weight:700;">Strong</p>
+                </div>
+                <div style="text-align:center; padding:10px; background:white; border-radius:8px;">
+                    <p style="margin:0; font-size:10px; color:var(--axf-muted);">GRAMMAR</p>
+                    <p style="margin:5px 0 0; font-size:14px; font-weight:700;">Flawless</p>
+                </div>
+            </div>
+            
+            <p style="margin:0 0 8px; color:#22C55E; font-weight:bold;">✔ Strengths:</p>
+            <p style="font-size:13px; color:var(--axf-muted); margin:0 0 15px;">Good personalization. Mentioning their open-source background is a great touch.</p>
+            
+            <p style="margin:0 0 8px; color:#EF4444; font-weight:bold;">⚠ Improvement:</p>
+            <p style="font-size:13px; color:var(--axf-muted); margin:0 0 15px;">Your call-to-action is weak. Don't just ask to connect, ask for a 5-min chat regarding their ${currentTargetJob} opening.</p>
+            
+            <p style="margin:0 0 8px; color:#4F7CFF; font-weight:bold;">💡 AI Optimized Version:</p>
+            <p style="font-size:13px; color:var(--axf-muted); margin:0; background:white; padding:10px; border-radius:8px; border:1px solid #E5E7EB;">"Hi Alex, loved your recent post on open-source scaling. I'm a ${currentTargetJob || 'Developer'} with 3 years of experience in exactly that stack. Would you be open to a 5-min chat about the role at Stripe?"</p>
+        </div>
+
+        <button class="action-btn btn-primary" onclick="finishOutreach()">Claim +150 XP</button>
+    `;
+}
+
+function finishOutreach() {
+    addXP(150, "Outreach Mastered");
+    unlockBadge("networking_pro", "Network Pro");
+    syncEcosystem();
+    closeModal();
+}
+
+// ==========================================
+// AI DAILY TECH NEWS & AUDIO QUIZ (DYNAMIC)
+// ==========================================
+function startTechNews() {
+    const currentYear = new Date().getFullYear();
+    const todayDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    
+    document.getElementById('modalTitle').innerText = `📰 Daily Tech News (${currentYear})`;
+    const newsText = `As of ${todayDate}, AI and automation are heavily integrated into the hiring process. In ${currentYear}, companies are focusing on skill-based hiring rather than degrees. If you are aiming for a ${currentTargetJob || 'tech'} role, ensure your portfolio highlights real-world AI integrations and data-driven decision making. Also, remote-first culture is evolving into hybrid models requiring strong asynchronous communication.`;
+    
+    document.getElementById('modalContent').innerHTML = `
+        <div style="background:#1a1a2e; color:white; padding:20px; border-radius:16px; margin-bottom:20px; text-align:center;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🎧</div>
+            <h4 style="margin:0 0 5px;">Listen to Today's Update</h4>
+            <p style="margin:0 0 15px; font-size:10px; opacity:0.7;">${todayDate}</p>
+            <button class="action-btn" style="background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color:white; margin:0;" onclick="playAudio()">▶ Play Audio (2 min)</button>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">TRANSCRIPT</h4>
+            <p style="font-size:14px; color:var(--axf-text); line-height:1.5;">${newsText}</p>
+        </div>
+
+        <button class="action-btn btn-primary" onclick="startTechQuiz()">Start Quiz →</button>
+    `;
+    openModal();
+}
+
+function playAudio() {
+    const currentYear = new Date().getFullYear();
+    const todayDate = new Date().toLocaleDateString();
+    const text = `As of ${todayDate}, AI and automation are heavily integrated into the hiring process. In ${currentYear}, companies are focusing on skill-based hiring rather than degrees. If you are aiming for a ${currentTargetJob || 'tech'} role, ensure your portfolio highlights real-world AI integrations and data-driven decision making.`;
+    
+    if('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1;
+        speechSynthesis.speak(utterance);
+    } else {
+        alert("Audio not supported on this browser.");
+    }
+}
+
+function startTechQuiz() {
+    document.getElementById('modalContent').innerHTML = `
+        <h4 style="margin:0 0 15px; font-size:16px;">Quiz: Question 1 of 3</h4>
+        <p style="font-size:14px; margin:0 0 15px;">What are companies focusing on in ${new Date().getFullYear()} according to the news?</p>
+        
+        <div class="quiz-option" onclick="checkTechQuiz(this, false)">A. Degrees and university names</div>
+        <div class="quiz-option" onclick="checkTechQuiz(this, true)">B. Skill-based hiring and real-world projects</div>
+        <div class="quiz-option" onclick="checkTechQuiz(this, false)">C. Number of years of experience only</div>
+        
+        <div id="quizNext" style="display:none; margin-top:15px;">
+            <button class="action-btn btn-primary" onclick="finishTechQuiz()">Finish & Claim XP</button>
+        </div>
+    `;
+}
+
+function checkTechQuiz(el, isCorrect) {
+    const parent = el.parentElement;
+    parent.querySelectorAll('.quiz-option').forEach(o => {
+        o.style.pointerEvents = 'none';
+        if(o === el) {
+            el.classList.add(isCorrect ? 'correct' : 'wrong');
+        }
+    });
+    
+    // Show correct answer if wrong
+    if(!isCorrect) {
+        parent.querySelectorAll('.quiz-option').forEach(o => {
+            if(o.innerText.startsWith('B')) o.classList.add('correct');
+        });
+    }
+
+    document.getElementById('quizNext').style.display = 'block';
+}
+
+function finishTechQuiz() {
+    let score = Math.floor(Math.random() * 30) + 70; 
+    reportData.techQuizScore = score;
+    appState.techNewsCompletedToday = true;
+    
+    addXP(100, "Tech Quiz Completed");
+    unlockBadge("tech_news_master", "News Master");
+    syncEcosystem();
+    closeModal();
+}
+
+// ==========================================
+// MODAL & NAVIGATION
+// ==========================================
+function openModal() {
+    document.getElementById('genericModal').classList.add('show');
+}
+function closeModal() {
+    document.getElementById('genericModal').classList.remove('show');
+    // Stop audio if playing
+    if('speechSynthesis' in window) speechSynthesis.cancel();
+}
+
+function switchView(viewName, btn) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + viewName).classList.add('active');
+    
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    
+    if (viewName === 'roadmap') renderRoadmap();
+    if (viewName === 'achievements') renderBadges();
+    if (viewName === 'report') renderReport();
+    if (viewName === 'learn') renderLearnView();
+    
+    window.scrollTo(0, 0);
+}
+
+// Init
+renderBadges();
+renderRoadmap();
+syncEcosystem();
+loadDailyChallenges();
+</script>
+</body>
+</html>

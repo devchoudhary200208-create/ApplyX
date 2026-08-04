@@ -1,0 +1,6 @@
+Flask
+python-dotenv
+requests
+google-generativeai
+groq
+openai
