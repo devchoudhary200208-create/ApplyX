@@ -47,6 +47,44 @@
     @keyframes axfGlowPulse { 0%,100%{opacity:.55; transform:scale(1);} 50%{opacity:.9; transform:scale(1.06);} }
     @keyframes scalePop { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
     @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    @keyframes splashLogoAnim { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes splashFadeOut { 0% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* --- PRODUCTION ADDITIONS: Toast, Offline, Skeleton --- */
+    #toastContainer { position: fixed; top: 20px; left: 20px; right: 20px; z-index: 10001; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+    .toast { background: #111827; color: white; padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: slideUp 0.3s ease; display: flex; align-items: center; gap: 8px; }
+    .toast.success { background: #22C55E; }
+    .toast.error { background: #EF4444; }
+    .toast.warning { background: #F59E0B; }
+    
+    #offlineOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(10px); z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; color: white; }
+    #offlineOverlay h2 { font-size: 24px; margin: 10px 0; }
+    #offlineOverlay p { color: #9CA3AF; font-size: 14px; margin: 0 0 20px; }
+    
+    .skeleton-card { background: rgba(255,255,255,0.7); border-radius: var(--axf-radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: 0 10px 30px -10px rgba(91,95,255,0.15); }
+    .skeleton-line { height: 12px; background: linear-gradient(90deg, #EAEAEA 25%, #F8F9FF 50%, #EAEAEA 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; border-radius: 6px; margin-bottom: 8px; }
+    .skeleton-line.short { width: 40%; }
+    .skeleton-line.medium { width: 70%; }
+    .skeleton-line.long { width: 100%; }
+
+    /* --- SPLASH SCREEN --- */
+    #splashScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #FFFFFF, #F8F9FF); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .splash-logo-svg { width: 100px; height: 100px; animation: splashLogoAnim 1.5s ease-out forwards; filter: drop-shadow(0 10px 20px rgba(79,124,255,0.3)); }
+    .splash-title { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #4F7CFF, #8A4DFF); -webkit-background-clip: text; color: transparent; margin: 20px 0 5px; animation: fadeIn 1s ease 0.5s forwards; opacity: 0; }
+    .splash-subtitle { color: var(--axf-muted); font-size: 14px; margin: 0 0 40px; animation: fadeIn 1s ease 0.8s forwards; opacity: 0; }
+    .splash-loader { width: 40px; height: 40px; border: 4px solid #EAEAEA; border-top-color: var(--axf-primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    .splash-footer { position: absolute; bottom: 30px; font-size: 12px; color: #9CA3AF; animation: fadeIn 1s ease 1.2s forwards; opacity: 0; }
+
+    /* --- LOGIN SCREEN --- */
+    #loginScreen { min-height: 100vh; background: linear-gradient(135deg, #F8F9FF, #FFFFFF); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+    .login-logo-wrap { width: 80px; height: 80px; margin-bottom: 20px; animation: scalePop 0.5s ease; }
+    .login-title { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #4F7CFF, #8A4DFF); -webkit-background-clip: text; color: transparent; margin: 0 0 5px; }
+    .login-sub { color: var(--axf-muted); font-size: 15px; margin: 0 0 40px; }
+    .google-login-btn { width: 100%; max-width: 320px; padding: 16px; border-radius: 16px; background: #FFFFFF; border: 1px solid #EAEAEA; font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; color: #374151; box-shadow: 0 4px 14px rgba(0,0,0,0.05); transition: transform 0.2s; }
+    .google-login-btn:active { transform: scale(0.98); }
+    .login-footer { margin-top: 40px; font-size: 12px; color: #9CA3AF; max-width: 300px; line-height: 1.5; }
+    .login-secure { color: #22C55E; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 10px; }
 
     /* --- AUTH MODAL CSS --- */
     .auth-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; animation: fadeIn 0.3s ease; }
@@ -76,7 +114,9 @@
     
     .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px; position: sticky; top: 0; background: rgba(248, 249, 255, 0.8); backdrop-filter: blur(20px); z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.6); }
     .nav-logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; }
-    .nav-logo-icon { width: 34px; height: 34px; border-radius: 11px; background: linear-gradient(135deg, var(--axf-primary), var(--axf-secondary)); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; box-shadow: 0 6px 16px rgba(91,95,255,0.35); }
+    .nav-logo-icon { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+    .nav-logout-btn { background: rgba(239, 68, 68, 0.1); color: #EF4444; border: none; padding: 8px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .nav-getapp-btn { background: linear-gradient(135deg, #4F7CFF, #8A4DFF); color: white; border: none; padding: 8px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(79,124,255,0.3); }
     .streak-badge { display: flex; align-items: center; gap: 5px; background: rgba(255, 159, 67, 0.15); color: #F59E0B; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 14px; cursor: pointer; }
 
     /* --- GLASSMORPHISM CARDS --- */
@@ -127,6 +167,7 @@
     .mission-text h4 { margin: 0; font-size: 14px; }
     .mission-text p { margin: 0; font-size: 12px; color: var(--axf-muted); }
     .mission-btn { margin-left: auto; background: var(--axf-primary); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .mission-complete-btn { margin-left: auto; background: var(--axf-success); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
 
     /* --- BOTTOM NAVIGATION --- */
     .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.8); display: flex; justify-content: space-around; padding: 12px 0 20px; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); }
@@ -212,7 +253,6 @@
     .orbit-right { right: -25px; top: 50%; transform: translateY(-50%); }
     .orbit-bottom { bottom: -25px; left: 50%; transform: translateX(-50%); }
     .orbit-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: linear-gradient(135deg, #4F7CFF, #8A4DFF); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
     .steps-box { margin-top: 20px; }
     .step-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: white; border-radius: 10px; margin-bottom: 8px; }
     .progress-track { height: 6px; background: #E5E7EB; border-radius: 3px; margin-top: 10px; }
@@ -241,12 +281,76 @@
 </head>
 <body>
 
-<!-- AUTH MODAL -->
+<!-- PRODUCTION ADDITIONS: Toast Container & Offline Overlay -->
+<div id="toastContainer"></div>
+<div id="offlineOverlay">
+    <div style="font-size: 60px; margin-bottom: 10px;">📡</div>
+    <h2>You are Offline</h2>
+    <p>Please check your internet connection. The app will resume automatically when you are back online.</p>
+</div>
+
+<!-- PREMIUM SPLASH SCREEN -->
+<div id="splashScreen">
+    <svg class="splash-logo-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="splashGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#4F7CFF"/>
+                <stop offset="100%" stop-color="#8A4DFF"/>
+            </linearGradient>
+        </defs>
+        <path d="M50 10 L80 100 L65 100 L50 60 L35 100 L20 100 Z" fill="url(#splashGrad)"/>
+        <path d="M50 10 L60 30 L50 25 L40 30 Z" fill="url(#splashGrad)"/>
+        <circle cx="50" cy="40" r="6" fill="#FFFFFF"/>
+    </svg>
+    <h1 class="splash-title">Apply.X</h1>
+    <p class="splash-subtitle">AI Career Intelligence</p>
+    <div class="splash-loader"></div>
+    <p class="splash-footer">Preparing your AI Career Journey...</p>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+    <div class="login-logo-wrap">
+        <svg width="80" height="96" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="loginGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#4F7CFF"/>
+                    <stop offset="100%" stop-color="#8A4DFF"/>
+                </linearGradient>
+            </defs>
+            <path d="M50 10 L80 100 L65 100 L50 60 L35 100 L20 100 Z" fill="url(#loginGrad)"/>
+            <path d="M50 10 L60 30 L50 25 L40 30 Z" fill="url(#loginGrad)"/>
+            <circle cx="50" cy="40" r="6" fill="#FFFFFF"/>
+        </svg>
+    </div>
+    <h1 class="login-title">Apply.X</h1>
+    <h2 class="login-sub">Welcome Back</h2>
+    <p style="color: var(--axf-muted); font-size: 14px; margin: 0 0 30px;">Continue your AI Career Journey</p>
+    
+    <button class="google-login-btn" onclick="handleGoogleLogin()">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+        Continue with Google
+    </button>
+    
+    <div class="login-footer">
+        <p>By continuing, you agree to our <span style="text-decoration: underline; cursor: pointer;">Privacy Policy</span> and <span style="text-decoration: underline; cursor: pointer;">Terms & Conditions</span>.</p>
+        <div class="login-secure">🔒 Your data is secure with Apply.X</div>
+    </div>
+</div>
+
+<!-- AUTH MODAL (For Email/Pass fallback) -->
 <div class="auth-overlay" id="authModal">
     <div class="auth-card">
         <span class="auth-close" onclick="closeAuth()">✕</span>
         <div class="auth-logo">
-            <div class="nav-logo-icon">A</div>
+            <div class="nav-logo-icon">
+                <svg width="32" height="38" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs><linearGradient id="modalLogoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4F7CFF"/><stop offset="100%" stop-color="#8A4DFF"/></linearGradient></defs>
+                    <path d="M50 10 L80 100 L65 100 L50 60 L35 100 L20 100 Z" fill="url(#modalLogoGrad)"/>
+                    <path d="M50 10 L60 30 L50 25 L40 30 Z" fill="url(#modalLogoGrad)"/>
+                    <circle cx="50" cy="40" r="6" fill="#FFFFFF"/>
+                </svg>
+            </div>
             <span>Apply.X</span>
         </div>
         <div id="signupView">
@@ -282,13 +386,23 @@
 </div>
 
 <!-- LANDING PAGE -->
-<div id="landingPage">
+<div id="landingPage" style="display: none;">
     <div class="nav-bar">
         <div class="nav-logo">
-            <div class="nav-logo-icon">A</div>
+            <div class="nav-logo-icon">
+                <svg width="34" height="40" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs><linearGradient id="navGrad1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4F7CFF"/><stop offset="100%" stop-color="#8A4DFF"/></linearGradient></defs>
+                    <path d="M50 10 L80 100 L65 100 L50 60 L35 100 L20 100 Z" fill="url(#navGrad1)"/>
+                    <path d="M50 10 L60 30 L50 25 L40 30 Z" fill="url(#navGrad1)"/>
+                    <circle cx="50" cy="40" r="6" fill="#FFFFFF"/>
+                </svg>
+            </div>
             <span>Apply.X</span>
         </div>
-        <span class="streak-badge" style="background: rgba(91,95,255,0.1); color: var(--axf-primary);" onclick="openAuth('signup')">Sign Up</span>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="nav-getapp-btn" onclick="showToast('Add to Home Screen to Get App!', 'success')">Get App</button>
+            <button class="nav-logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
     </div>
     
     <div style="text-align: center; margin: 40px 0;">
@@ -313,20 +427,31 @@
         <textarea id="skills" class="input-field" placeholder="</> Your current skills (comma separated)"></textarea>
         <textarea id="experience" class="input-field" placeholder="💼 Experience / Projects"></textarea>
         <input type="text" id="target_job" class="input-field" placeholder="🎯 Target Job Role (e.g. Data Analyst)">
-        <button class="action-btn btn-primary" onclick="generateEverything()">✨ Generate Everything</button>
+        <button class="action-btn btn-primary" id="generateBtn" onclick="generateEverything()">✨ Generate Everything</button>
         <p id="formError" style="color:#EF4444; font-size:13px; margin-top:10px; display:none; text-align:center;"></p>
     </div>
 </div>
 
 <!-- MAIN APP CONTAINER (Hidden Initially) -->
-<div id="appContainer">
+<div id="appContainer" style="display: none;">
     <!-- TOP NAV -->
     <div class="nav-bar">
         <div class="nav-logo">
-            <div class="nav-logo-icon">A</div>
+            <div class="nav-logo-icon">
+                <svg width="34" height="40" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs><linearGradient id="navGrad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4F7CFF"/><stop offset="100%" stop-color="#8A4DFF"/></linearGradient></defs>
+                    <path d="M50 10 L80 100 L65 100 L50 60 L35 100 L20 100 Z" fill="url(#navGrad2)"/>
+                    <path d="M50 10 L60 30 L50 25 L40 30 Z" fill="url(#navGrad2)"/>
+                    <circle cx="50" cy="40" r="6" fill="#FFFFFF"/>
+                </svg>
+            </div>
             <span>Apply.X</span>
         </div>
-        <div class="streak-badge" id="topStreakBadge">🔥 1</div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="streak-badge" id="topStreakBadge">🔥 1</div>
+            <button class="nav-getapp-btn" onclick="showToast('Add to Home Screen to Get App!', 'success')">Get App</button>
+            <button class="nav-logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
     </div>
 
     <!-- DASHBOARD VIEW -->
@@ -396,6 +521,25 @@
                 <div class="stat-icon">🎤</div>
                 <div class="stat-val" id="statInterview">0</div>
                 <div class="stat-label">Mock Interviews</div>
+            </div>
+        </div>
+
+        <!-- NEW: Personalized AI Feedback -->
+        <div class="glass-card">
+            <h3 style="margin:0 0 15px; font-size:16px; display:flex; align-items:center; gap:8px;">🧠 Personalized AI Feedback</h3>
+            <div id="aiFeedbackList" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="skeleton-line long"></div>
+                <div class="skeleton-line medium"></div>
+                <div class="skeleton-line long"></div>
+            </div>
+        </div>
+
+        <!-- NEW: Daily Career Challenge -->
+        <div class="glass-card" style="background: linear-gradient(135deg, #1a1a2e, #111827); color: white; border: none;">
+            <h3 style="margin:0 0 15px; font-size:16px; display:flex; align-items:center; gap:8px;">🎯 Daily Career Challenge</h3>
+            <div id="dailyChallengeList" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="skeleton-line long" style="background: rgba(255,255,255,0.1);"></div>
+                <div class="skeleton-line medium" style="background: rgba(255,255,255,0.1);"></div>
             </div>
         </div>
 
@@ -573,13 +717,76 @@
     </div>
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
 <script>
+// ==========================================
+// PRODUCTION MODE: Global Error Handling & Crash Prevention
+// ==========================================
+window.addEventListener('error', function(e) {
+    console.error("Global Error Caught:", e.message);
+    showToast("An unexpected error occurred. Please try again.", "error");
+    return true;
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+    console.error("Unhandled Promise Rejection:", e.reason);
+    showToast("Network or API issue. Retrying...", "warning");
+});
+
+// ==========================================
+// PRODUCTION MODE: Toast & Offline Detection
+// ==========================================
+function showToast(message, type = 'success') {
+    try {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'} ${message}`;
+        document.getElementById('toastContainer').appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    } catch(e) { console.error("Toast Error:", e); }
+}
+
+function updateOnlineStatus() {
+    const offlineOverlay = document.getElementById('offlineOverlay');
+    if (navigator.onLine) {
+        offlineOverlay.style.display = 'none';
+    } else {
+        offlineOverlay.style.display = 'flex';
+    }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// ==========================================
+// SPLASH SCREEN LOGIC (Fixed Loading Issue)
+// ==========================================
+try {
+    updateOnlineStatus();
+    setTimeout(function() {
+        let splash = document.getElementById('splashScreen');
+        if(splash) splash.style.display = 'none';
+        checkAuthState();
+    }, 2000); // 2 Seconds baad direct login screen
+} catch(e) { 
+    console.error("Splash Error:", e); 
+    document.getElementById('splashScreen').style.display = 'none';
+    checkAuthState();
+}
+
 // ==========================================
 // GLOBAL STATE & CONFIG (Single Source of Truth)
 // ==========================================
 let currentTargetJob = "";
 let currentResumeData = {};
 let currentTplId = 1;
+let isGenerating = false; // Prevent duplicate requests
 let reportData = { name: "", atsScore: 0, matchPercent: 0, topMissing: [], interviewScore: 0, networkingScore: 0, techQuizScore: 0 };
 
 let appState = {
@@ -604,9 +811,10 @@ let interviewState = {
 };
 
 let selectedMsgType = "Connection Request"; // For Outreach
+let db = null; // Firestore instance
 
 // ==========================================
-// FIREBASE & AUTH (Preserved Original)
+// FIREBASE & AUTH (Enhanced with Auto-Login & Firestore)
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyD073SXcxTy4vrIe_VB05PKrTHCsuKVH_c",
@@ -616,10 +824,57 @@ const firebaseConfig = {
     messagingSenderId: "830130025091",
     appId: "1:830130025091:web:f2b176aefc763826c261b6"
 };
+
 try {
     firebase.initializeApp(firebaseConfig);
     var auth = firebase.auth();
-} catch(e) { console.error("Firebase Init Error:", e); }
+    db = firebase.firestore(); // Initialize Firestore
+} catch(e) { 
+    console.error("Firebase Init Error:", e); 
+    showToast("Connection to servers failed. Please refresh.", "error");
+}
+
+function checkAuthState() {
+    try {
+        if (typeof auth !== 'undefined' && auth) {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('landingPage').style.display = 'block';
+                    document.getElementById('appContainer').style.display = 'block';
+                    restoreUserData(user.uid);
+                } else {
+                    document.getElementById('loginScreen').style.display = 'flex';
+                    document.getElementById('landingPage').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'none';
+                }
+            });
+        } else {
+            document.getElementById('loginScreen').style.display = 'flex';
+        }
+    } catch(e) { console.error("Auth State Error:", e); }
+}
+
+function restoreUserData(uid) {
+    if (!db) return;
+    db.collection('users').doc(uid).get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.appState) appState = { ...appState, ...data.appState };
+            if (data.reportData) reportData = { ...reportData, ...data.reportData };
+            if (data.currentTargetJob) currentTargetJob = data.currentTargetJob;
+            if (data.currentResumeData) currentResumeData = data.currentResumeData;
+            
+            syncEcosystem(); 
+            loadDailyChallenge(uid);
+            generateAIFeedback(uid);
+            showToast("Session Restored!", "success");
+        }
+    }).catch(err => {
+        console.error("Error restoring user data: ", err);
+        showToast("Could not restore session.", "error");
+    });
+}
 
 function openAuth(view) {
     document.getElementById('authModal').classList.add('show');
@@ -648,7 +903,7 @@ function handleSignUp() {
     if (!name || !email || !password) return showAuthError("Please fill all fields.");
     if (password.length < 6) return showAuthError("Password must be at least 6 characters.");
     auth.createUserWithEmailAndPassword(email, password)
-        .then(cred => { cred.user.updateProfile({ displayName: name }); closeAuth(); })
+        .then(cred => { cred.user.updateProfile({ displayName: name }); closeAuth(); showToast("Account Created!", "success"); })
         .catch(err => showAuthError(err.message));
 }
 function handleLogin() {
@@ -656,315 +911,334 @@ function handleLogin() {
     const password = document.getElementById('li_password').value;
     if (!email || !password) return showAuthError("Please enter email and password.");
     auth.signInWithEmailAndPassword(email, password)
-        .then(cred => closeAuth())
+        .then(cred => { closeAuth(); showToast("Login Successful!", "success"); })
         .catch(err => showAuthError("Invalid credentials."));
 }
-function handleGoogleLogin() {
+ function handleGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
+    // Popup block hone ke chances zyada hain, isliye direct Redirect use karenge
     auth.signInWithRedirect(provider);
 }
+
 if (typeof auth !== 'undefined' && auth) {
-    auth.getRedirectResult().then(result => { if(result.user) closeAuth(); }).catch(err => console.error(err));
+    auth.getRedirectResult().then(result => {
+        if (result && result.user) {
+            closeAuth();
+            showToast("Google Login Success", "success");
+        }
+    }).catch(err => console.error("Google Auth Error:", err));
 }
 
 // ==========================================
-// CORE LOGIC & API CALLS (FIXED SYNTAX)
+// CORE LOGIC & API CALLS (Production Hardened)
 // ==========================================
-function fetchWithTimeout(url, options, timeoutMs = 120000) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+async function fetchWithRetry(url, options, timeout = 120000, retries = 2) {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (error) {
+        if (retries > 0 && navigator.onLine) {
+            showToast("Retrying API request...", "warning");
+            return fetchWithRetry(url, options, timeout, retries - 1);
+        }
+        throw error;
+    }
 }
 
 function generateEverything() {
-    const name = document.getElementById('name').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const linkedin = document.getElementById('linkedin').value.trim();
-    const address = document.getElementById('address').value.trim();
-    const education = document.getElementById('education').value.trim();
-    const skills = document.getElementById('skills').value.trim();
-    const experience = document.getElementById('experience').value.trim();
-    const target_job = document.getElementById('target_job').value.trim();
-    const errorEl = document.getElementById('formError');
+    if (isGenerating) return showToast("Already generating, please wait...", "warning");
+    isGenerating = true;
+    document.getElementById('generateBtn').innerText = "Generating...";
+    document.getElementById('generateBtn').disabled = true;
 
-    if (!name || !skills || !target_job) {
-        errorEl.innerText = "Please fill at least Name, Skills, and Target Job.";
-        errorEl.style.display = "block";
-        return;
+    try {
+        const name = document.getElementById('name').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const linkedin = document.getElementById('linkedin').value.trim();
+        const address = document.getElementById('address').value.trim();
+        const education = document.getElementById('education').value.trim();
+        const skills = document.getElementById('skills').value.trim();
+        const experience = document.getElementById('experience').value.trim();
+        const target_job = document.getElementById('target_job').value.trim();
+        const errorEl = document.getElementById('formError');
+
+        if (!name || !skills || !target_job) {
+            errorEl.innerText = "Please fill at least Name, Skills, and Target Job.";
+            errorEl.style.display = "block";
+            isGenerating = false;
+            document.getElementById('generateBtn').innerText = "✨ Generate Everything";
+            document.getElementById('generateBtn').disabled = false;
+            return;
+        }
+
+        errorEl.style.display = "none";
+        currentTargetJob = target_job;
+        currentResumeData = { name, phone, email, linkedin, address, education, skills, experience, target_job, summary: "" };
+        reportData.name = name;
+        reportData.topMissing = ["Communication", "Teamwork", "Problem Solving", "Leadership", "Critical Thinking"]; 
+
+        const payload = { name, phone, email, linkedin, address, education, skills, experience, target_job, user_id: auth.currentUser ? auth.currentUser.uid : "guest" };
+
+        document.getElementById('landingPage').style.display = 'none';
+        document.getElementById('processingOverlay').style.display = 'flex';
+        
+        setTimeout(() => {
+            document.getElementById('processingOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('targetJobRole').innerText = target_job;
+            document.getElementById('roadmapJob').innerText = target_job;
+            document.getElementById('dashUserName').innerText = `Let's boost your career, ${name}!`;
+            
+            renderResumeTemplate(1);
+            updateRoadmap(0, true); 
+            addXP(200, "Resume Created", true);
+            unlockBadge("first_resume", "First Resume", true);
+            syncEcosystem(); 
+            
+            fetchAPICalls(payload);
+            loadDailyChallenges();
+            isGenerating = false;
+            document.getElementById('generateBtn').innerText = "✨ Generate Everything";
+            document.getElementById('generateBtn').disabled = false;
+        }, 3000);
+    } catch(e) {
+        console.error("Generate Error:", e);
+        showToast("Failed to generate profile. Please try again.", "error");
+        isGenerating = false;
+        document.getElementById('generateBtn').innerText = "✨ Generate Everything";
+        document.getElementById('generateBtn').disabled = false;
     }
-
-    errorEl.style.display = "none";
-    currentTargetJob = target_job;
-    currentResumeData = { name, phone, email, linkedin, address, education, skills, experience, target_job, summary: "" };
-    reportData.name = name;
-    reportData.topMissing = ["Communication", "Teamwork", "Problem Solving", "Leadership", "Critical Thinking"]; 
-
-    const payload = { name, phone, email, linkedin, address, education, skills, experience, target_job };
-
-    // Show Processing
-    document.getElementById('landingPage').style.display = 'none';
-    document.getElementById('processingOverlay').style.display = 'flex';
-    
-    setTimeout(() => {
-        document.getElementById('processingOverlay').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'block';
-        document.getElementById('targetJobRole').innerText = target_job;
-        document.getElementById('roadmapJob').innerText = target_job;
-        document.getElementById('dashUserName').innerText = `Let's boost your career, ${name}!`;
-        
-        renderResumeTemplate(1);
-        updateRoadmap(0, true); // Silently update roadmap step 1
-        addXP(200, "Resume Created", true);
-        unlockBadge("first_resume", "First Resume", true);
-        syncEcosystem(); // Central Sync
-        
-        // Trigger API calls
-        fetchAPICalls(payload);
-        loadDailyChallenges();
-    }, 3000); // Simulating 3 sec load
 }
 
-function fetchAPICalls(payload) {
+async function fetchAPICalls(payload) {
     // 1. BUILD RESUME
-    fetchWithTimeout('/build-resume', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+        const data = await fetchWithRetry('/build-resume', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
         if (!data.error) {
             currentResumeData.summary = data.summary;
             renderResumeTemplate(currentTplId);
         }
-    })
-    .catch(err => console.error("Resume Error:", err));
+    } catch (err) { console.error("Resume Error:", err); showToast("Resume generation failed.", "error"); }
 
     // 2. SKILL GAP
-    fetchWithTimeout('/skill-gap', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+        const data = await fetchWithRetry('/skill-gap', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
         if (!data.error) {
-            try {
-                const parsed = JSON.parse(data.result);
-                reportData.topMissing = parsed.missing_skills.map(m => m.skill);
-                syncEcosystem();
-            } catch (e) { console.error("Parse error skill gap"); }
+            const parsed = JSON.parse(data.result);
+            reportData.topMissing = parsed.missing_skills.map(m => m.skill);
+            syncEcosystem();
         }
-    })
-    .catch(err => console.error("Skill Gap Error:", err));
+    } catch (err) { console.error("Skill Gap Error:", err); }
 
     // 3. JOB MATCH
-    fetchWithTimeout('/job-match', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+        const data = await fetchWithRetry('/job-match', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
         if (!data.error) {
-            try {
-                const parsed = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
-                reportData.matchPercent = parsed.match_percent || 75;
-                syncEcosystem();
-                addXP(50, "Job Match Analyzed");
-            } catch (e) { console.error("Parse error match"); }
+            const parsed = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
+            reportData.matchPercent = parsed.match_percent || 75;
+            syncEcosystem();
+            addXP(50, "Job Match Analyzed", true);
         }
-    })
-    .catch(err => console.error("Match Error:", err));
+    } catch (err) { console.error("Match Error:", err); }
 
     // 4. ATS SCORE
-    fetchWithTimeout('/ats-score', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+        const data = await fetchWithRetry('/ats-score', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
         if (!data.error) {
-            try {
-                const p = JSON.parse(data.result);
-                reportData.atsScore = p.ats_score || 80;
-                syncEcosystem();
-                addXP(50, "ATS Score Generated");
-            } catch (e) { console.error("Parse error ats"); }
+            const p = JSON.parse(data.result);
+            reportData.atsScore = p.ats_score || 80;
+            syncEcosystem();
+            addXP(50, "ATS Score Generated", true);
         }
-    })
-    .catch(err => console.error("ATS Error:", err));
+    } catch (err) { console.error("ATS Error:", err); }
+    
+    showToast("Profile generated successfully!", "success");
 }
 
 // ==========================================
 // RESUME TEMPLATES (Existing Feature Preserved)
 // ==========================================
 function renderResumeTemplate(tplId) {
-    currentTplId = tplId;
-    document.querySelectorAll('#view-resume .tpl-btn').forEach((btn, i) => {
-        btn.classList.toggle('active', i === tplId - 1);
-    });
-    
-    const d = currentResumeData;
-    const skillsList = d.skills ? d.skills.split(",").map(s => s.trim()).filter(Boolean) : [];
-    const expHtml = d.experience ? `<p>${d.experience.replace(/\n/g, '<br>')}</p>` : "<p>No experience added yet.</p>";
-    const eduHtml = d.education || "Not Provided";
-    const summaryHtml = d.summary || "Professional summary will appear here.";
-    
-    let html = '';
+    try {
+        currentTplId = tplId;
+        document.querySelectorAll('#view-resume .tpl-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', i === tplId - 1);
+        });
+        
+        const d = currentResumeData;
+        if (!d.name) {
+            document.getElementById('resumeOutput').innerHTML = `<div style="text-align:center; color:var(--axf-muted); padding:40px;">Please generate your resume first.</div>`;
+            return;
+        }
+        const skillsList = d.skills ? d.skills.split(",").map(s => s.trim()).filter(Boolean) : [];
+        const expHtml = d.experience ? `<p>${d.experience.replace(/\n/g, '<br>')}</p>` : "<p>No experience added yet.</p>";
+        const eduHtml = d.education || "Not Provided";
+        const summaryHtml = d.summary || "Professional summary will appear here.";
+        
+        let html = '';
 
-    if (tplId === 1) {
-        html = `
-        <div class="ats-header">
-            <h1>${d.name}</h1>
-            <p class="ats-role">${d.target_job}</p>
-            <div class="ats-contact">
-                ${d.email ? `<span>✉️ ${d.email}</span>` : ""}
-                ${d.phone ? `<span>📞 ${d.phone}</span>` : ""}
-                ${d.address ? `<span>📍 ${d.address}</span>` : ""}
+        if (tplId === 1) {
+            html = `
+            <div class="ats-header">
+                <h1>${d.name}</h1>
+                <p class="ats-role">${d.target_job}</p>
+                <div class="ats-contact">
+                    ${d.email ? `<span>✉️ ${d.email}</span>` : ""}
+                    ${d.phone ? `<span>📞 ${d.phone}</span>` : ""}
+                    ${d.address ? `<span>📍 ${d.address}</span>` : ""}
+                </div>
             </div>
-        </div>
-        <div class="ats-section"><h2>Summary</h2><p>${summaryHtml}</p></div>
-        <div class="ats-section"><h2>Skills</h2><div class="ats-skills">${skillsList.map(s=>`<span>${s}</span>`).join("")}</div></div>
-        <div class="ats-section"><h2>Experience</h2>${expHtml}</div>
-        <div class="ats-section"><h2>Education</h2><p>${eduHtml}</p></div>`;
-    } else if (tplId === 2) {
-        html = `
-        <div style="display:flex; gap:15px;">
-            <div style="width:30%; background:#F8FAFC; padding:15px; border-radius:8px;">
-                <div style="width:60px; height:60px; background:#4F7CFF; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold; margin-bottom:10px;">${d.name ? d.name[0] : 'A'}</div>
-                <h3 style="font-size:12px; margin:5px 0;">Contact</h3>
-                <p style="font-size:10px; color:#6b7280;">${d.email || ''}<br>${d.phone || ''}</p>
-                <h3 style="font-size:12px; margin:10px 0;">Skills</h3>
-                <p style="font-size:10px; color:#6b7280;">${skillsList.join(", ")}</p>
+            <div class="ats-section"><h2>Summary</h2><p>${summaryHtml}</p></div>
+            <div class="ats-section"><h2>Skills</h2><div class="ats-skills">${skillsList.map(s=>`<span>${s}</span>`).join("")}</div></div>
+            <div class="ats-section"><h2>Experience</h2>${expHtml}</div>
+            <div class="ats-section"><h2>Education</h2><p>${eduHtml}</p></div>`;
+        } else if (tplId === 2) {
+            html = `
+            <div style="display:flex; gap:15px;">
+                <div style="width:30%; background:#F8FAFC; padding:15px; border-radius:8px;">
+                    <div style="width:60px; height:60px; background:#4F7CFF; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold; margin-bottom:10px;">${d.name ? d.name[0] : 'A'}</div>
+                    <h3 style="font-size:12px; margin:5px 0;">Contact</h3>
+                    <p style="font-size:10px; color:#6b7280;">${d.email || ''}<br>${d.phone || ''}</p>
+                    <h3 style="font-size:12px; margin:10px 0;">Skills</h3>
+                    <p style="font-size:10px; color:#6b7280;">${skillsList.join(", ")}</p>
+                </div>
+                <div style="width:70%;">
+                    <h1 style="font-size:20px; margin:0;">${d.name}</h1>
+                    <p style="font-size:12px; color:#4F7CFF; margin:2px 0 10px;">${d.target_job}</p>
+                    <h3 style="font-size:14px; margin:10px 0;">Summary</h3>
+                    <p style="font-size:11px; color:#374151;">${summaryHtml}</p>
+                    <h3 style="font-size:14px; margin:10px 0;">Experience</h3>
+                    <p style="font-size:11px; color:#374151;">${d.experience || 'Not Provided'}</p>
+                </div>
+            </div>`;
+        } else if (tplId === 3) {
+            html = `
+            <div style="text-align:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:15px;">
+                <h1 style="font-size:24px; margin:0; text-transform:uppercase; letter-spacing:2px;">${d.name}</h1>
+                <p style="font-size:12px; color:#6b7280; margin:5px 0;">${d.target_job}</p>
             </div>
-            <div style="width:70%;">
-                <h1 style="font-size:20px; margin:0;">${d.name}</h1>
-                <p style="font-size:12px; color:#4F7CFF; margin:2px 0 10px;">${d.target_job}</p>
-                <h3 style="font-size:14px; margin:10px 0;">Summary</h3>
-                <p style="font-size:11px; color:#374151;">${summaryHtml}</p>
-                <h3 style="font-size:14px; margin:10px 0;">Experience</h3>
-                <p style="font-size:11px; color:#374151;">${d.experience || 'Not Provided'}</p>
-            </div>
-        </div>`;
-    } else if (tplId === 3) {
-        html = `
-        <div style="text-align:center; border-bottom:2px solid #111; padding-bottom:10px; margin-bottom:15px;">
-            <h1 style="font-size:24px; margin:0; text-transform:uppercase; letter-spacing:2px;">${d.name}</h1>
-            <p style="font-size:12px; color:#6b7280; margin:5px 0;">${d.target_job}</p>
-        </div>
-        <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Summary</h3>
-        <p style="font-size:12px; color:#374151;">${summaryHtml}</p>
-        <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Experience</h3>
-        <p style="font-size:12px; color:#374151;">${d.experience || 'Not Provided'}</p>
-        <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Skills</h3>
-        <p style="font-size:12px; color:#374151;">${skillsList.join(" • ")}</p>`;
-    } else if (tplId === 4) {
-         html = `
-        <div style="background:#1a1a2e; color:white; padding:15px; border-radius:8px 8px 0 0;">
-            <h1 style="font-size:22px; margin:0;">${d.name}</h1>
-            <p style="font-size:12px; color:#8A4DFF; margin:5px 0;">${d.target_job}</p>
-        </div>
-        <div style="padding:15px;">
             <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Summary</h3>
             <p style="font-size:12px; color:#374151;">${summaryHtml}</p>
             <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Experience</h3>
             <p style="font-size:12px; color:#374151;">${d.experience || 'Not Provided'}</p>
-        </div>`;
-    } else {
-        html = `
-        <div style="text-align:center; margin-bottom:15px;">
-            <h1 style="font-size:22px; margin:0; color:#8A4DFF;">${d.name}</h1>
-            <p style="font-size:13px; color:#6b7280; margin:5px 0;">${d.target_job}</p>
-        </div>
-        <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">🎓 Education</h3>
-        <p style="font-size:12px; color:#374151;">${eduHtml}</p>
-        <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">💼 Experience</h3>
-        <p style="font-size:12px; color:#374151;">${d.experience || 'Not Provided'}</p>
-        <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">⚡ Skills</h3>
-        <div class="ats-skills">${skillsList.map(s=>`<span style="background:#F3E8FF; color:#8A4DFF;">${s}</span>`).join("")}</div>`;
+            <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Skills</h3>
+            <p style="font-size:12px; color:#374151;">${skillsList.join(" • ")}</p>`;
+        } else if (tplId === 4) {
+             html = `
+            <div style="background:#1a1a2e; color:white; padding:15px; border-radius:8px 8px 0 0;">
+                <h1 style="font-size:22px; margin:0;">${d.name}</h1>
+                <p style="font-size:12px; color:#8A4DFF; margin:5px 0;">${d.target_job}</p>
+            </div>
+            <div style="padding:15px;">
+                <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Summary</h3>
+                <p style="font-size:12px; color:#374151;">${summaryHtml}</p>
+                <h3 style="font-size:12px; text-transform:uppercase; letter-spacing:1px; margin:10px 0;">Experience</h3>
+                <p style="font-size:12px; color:#374151;">${d.experience || 'Not Provided'}</p>
+            </div>`;
+        } else {
+            html = `
+            <div style="text-align:center; margin-bottom:15px;">
+                <h1 style="font-size:22px; margin:0; color:#8A4DFF;">${d.name}</h1>
+                <p style="font-size:13px; color:#6b7280; margin:5px 0;">${d.target_job}</p>
+            </div>
+            <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">🎓 Education</h3>
+            <p style="font-size:12px; color:#374151;">${eduHtml}</p>
+            <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">💼 Experience</h3>
+            <p style="font-size:12px; color:#374151;">${d.experience || 'Not Provided'}</p>
+            <h3 style="font-size:14px; margin:10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">⚡ Skills</h3>
+            <div class="ats-skills">${skillsList.map(s=>`<span style="background:#F3E8FF; color:#8A4DFF;">${s}</span>`).join("")}</div>`;
+        }
+        document.getElementById('resumeOutput').innerHTML = html;
+    } catch(e) {
+        console.error("Render Resume Error:", e);
+        document.getElementById('resumeOutput').innerHTML = `<div style="text-align:center; color:#EF4444; padding:40px;">Error rendering resume.</div>`;
     }
-    document.getElementById('resumeOutput').innerHTML = html;
 }
 
 // ==========================================
 // FEATURE 1: AI SKILL GAP → LEARN HUB
 // ==========================================
 function renderLearnView() {
-    const learnList = document.getElementById('learnList');
-    if (!learnList) return;
-    
-    if (reportData.topMissing.length === 0) {
-        learnList.innerHTML = `<div class="glass-card" style="text-align:center; color:var(--axf-muted);">Please generate your resume first to see skill recommendations.</div>`;
-        return;
-    }
+    try {
+        const learnList = document.getElementById('learnList');
+        if (!learnList) return;
+        
+        if (reportData.topMissing.length === 0) {
+            learnList.innerHTML = `<div class="glass-card" style="text-align:center; color:var(--axf-muted);">Please generate your resume first to see skill recommendations.</div>`;
+            return;
+        }
 
-    const priorities = ["High", "Medium", "Easy"];
-    const colors = ["#EF4444", "#F59E0B", "#22C55E"];
-    
-    document.getElementById('statSkills').innerText = `${appState.skillsCompleted}/${reportData.topMissing.length}`;
-    
-    learnList.innerHTML = reportData.topMissing.map((skill, i) => {
-        const isCompleted = i < appState.skillsCompleted;
-        return `
-        <div class="glass-card" id="skill-card-${i}" style="${isCompleted ? 'opacity: 0.6;' : ''}">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h4 style="margin:0; font-size:16px;">${skill}</h4>
-                <span style="font-size:10px; font-weight:700; padding:4px 8px; border-radius:10px; color:${colors[i%3]}; background:${colors[i%3]}20;">${priorities[i%3]} Priority</span>
-            </div>
-            <p style="font-size:12px; color:var(--axf-muted); margin:0 0 10px;">Learn this skill to improve your Job Match by ${5+i*2}%</p>
-            ${isCompleted ? 
-                `<div style="text-align:center; color:#22C55E; font-weight:700; padding:10px;">✅ Completed!</div>` :
-                `<div style="display:flex; gap:10px;">
-                    <button class="action-btn btn-secondary" style="flex:1; padding:10px; font-size:12px; margin:0;" onclick="openLearnHub(${i})">📚 Learn</button>
-                    <button class="action-btn btn-primary" style="flex:1; padding:10px; font-size:12px; margin:0;" onclick="completeSkill(${i})">✅ Complete</button>
-                </div>`
-            }
-        </div>`;
-    }).join("");
+        const priorities = ["High", "Medium", "Easy"];
+        const colors = ["#EF4444", "#F59E0B", "#22C55E"];
+        
+        document.getElementById('statSkills').innerText = `${appState.skillsCompleted}/${reportData.topMissing.length}`;
+        
+        learnList.innerHTML = reportData.topMissing.map((skill, i) => {
+            const isCompleted = i < appState.skillsCompleted;
+            return `
+            <div class="glass-card" id="skill-card-${i}" style="${isCompleted ? 'opacity: 0.6;' : ''}">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h4 style="margin:0; font-size:16px;">${skill}</h4>
+                    <span style="font-size:10px; font-weight:700; padding:4px 8px; border-radius:10px; color:${colors[i%3]}; background:${colors[i%3]}20;">${priorities[i%3]} Priority</span>
+                </div>
+                <p style="font-size:12px; color:var(--axf-muted); margin:0 0 10px;">Learn this skill to improve your Job Match by ${5+i*2}%</p>
+                ${isCompleted ? 
+                    `<div style="text-align:center; color:#22C55E; font-weight:700; padding:10px;">✅ Completed!</div>` :
+                    `<div style="display:flex; gap:10px;">
+                        <button class="action-btn btn-secondary" style="flex:1; padding:10px; font-size:12px; margin:0;" onclick="openLearnHub(${i})">📚 Learn</button>
+                        <button class="action-btn btn-primary" style="flex:1; padding:10px; font-size:12px; margin:0;" onclick="completeSkill(${i})">✅ Complete</button>
+                    </div>`
+                }
+            </div>`;
+        }).join("");
+    } catch(e) { console.error("Learn View Error:", e); }
 }
 
 function openLearnHub(id) {
-    const skill = reportData.topMissing[id];
-    document.getElementById('modalTitle').innerText = `Learn: ${skill}`;
-    
-    // Simulated AI Learning Hub Content
-    document.getElementById('modalContent').innerHTML = `
-        <div style="margin-bottom:20px;">
-            <h4 style="margin:0 0 5px; font-size:14px; color:var(--axf-muted);">SKILL OVERVIEW</h4>
-            <p style="font-size:14px; margin:0;">${skill} is crucial for ${currentTargetJob} roles. It helps in solving complex problems and improving efficiency.</p>
-        </div>
-
-        <div style="margin-bottom:20px;">
-            <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">FREE RESOURCES</h4>
-            <a href="#" class="resource-link"><div class="resource-icon">▶️</div> YouTube: Mastering ${skill} (45 min)</a>
-            <a href="#" class="resource-link"><div class="resource-icon">📄</div> Official Documentation</a>
-            <a href="#" class="resource-link"><div class="resource-icon">💻</div> Free Code Camp Course</a>
-        </div>
-
-        <div style="margin-bottom:20px;">
-            <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">AI LEARNING PATH</h4>
-            <div class="roadmap-track" style="padding-left:20px;">
-                <div class="roadmap-step completed"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">1</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Learn Basics</h4></div></div>
-                <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">2</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Practice 5 Problems</h4></div></div>
-                <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">3</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Build Mini Project</h4></div></div>
-                <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">4</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Interview Questions</h4></div></div>
+    try {
+        const skill = reportData.topMissing[id];
+        document.getElementById('modalTitle').innerText = `Learn: ${skill}`;
+        
+        document.getElementById('modalContent').innerHTML = `
+            <div style="margin-bottom:20px;">
+                <h4 style="margin:0 0 5px; font-size:14px; color:var(--axf-muted);">SKILL OVERVIEW</h4>
+                <p style="font-size:14px; margin:0;">${skill} is crucial for ${currentTargetJob} roles. It helps in solving complex problems and improving efficiency.</p>
             </div>
-        </div>
 
-        <div style="margin-bottom:20px;">
-            <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">MINI QUIZ</h4>
-            <p style="font-size:14px; margin:0 0 10px;">What is the primary use of ${skill}?</p>
-            <div class="quiz-option" onclick="selectQuizOption(this)">A. To make coffee</div>
-            <div class="quiz-option" onclick="selectQuizOption(this)">B. To solve complex problems</div>
-            <div class="quiz-option" onclick="selectQuizOption(this)">C. To design UI</div>
-        </div>
+            <div style="margin-bottom:20px;">
+                <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">FREE RESOURCES</h4>
+                <a href="#" class="resource-link"><div class="resource-icon">▶️</div> YouTube: Mastering ${skill} (45 min)</a>
+                <a href="#" class="resource-link"><div class="resource-icon">📄</div> Official Documentation</a>
+                <a href="#" class="resource-link"><div class="resource-icon">💻</div> Free Code Camp Course</a>
+            </div>
 
-        <button class="action-btn btn-primary" onclick="closeModal(); completeSkill(${id});">Finish & Mark Complete</button>
-    `;
-    openModal();
+            <div style="margin-bottom:20px;">
+                <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">AI LEARNING PATH</h4>
+                <div class="roadmap-track" style="padding-left:20px;">
+                    <div class="roadmap-step completed"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">1</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Learn Basics</h4></div></div>
+                    <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">2</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Practice 5 Problems</h4></div></div>
+                    <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">3</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Build Mini Project</h4></div></div>
+                    <div class="roadmap-step"><div class="roadmap-dot" style="width:20px; height:20px; font-size:10px; left:-20px;">4</div><div class="roadmap-content" style="padding:10px;"><h4 style="font-size:13px; margin:0;">Interview Questions</h4></div></div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <h4 style="margin:0 0 10px; font-size:14px; color:var(--axf-muted);">MINI QUIZ</h4>
+                <p style="font-size:14px; margin:0 0 10px;">What is the primary use of ${skill}?</p>
+                <div class="quiz-option" onclick="selectQuizOption(this)">A. To make coffee</div>
+                <div class="quiz-option" onclick="selectQuizOption(this)">B. To solve complex problems</div>
+                <div class="quiz-option" onclick="selectQuizOption(this)">C. To design UI</div>
+            </div>
+
+            <button class="action-btn btn-primary" onclick="closeModal(); completeSkill(${id});">Finish & Mark Complete</button>
+        `;
+        openModal();
+    } catch(e) { console.error("Learn Hub Error:", e); }
 }
 
 function selectQuizOption(el) {
@@ -974,27 +1248,26 @@ function selectQuizOption(el) {
 }
 
 function completeSkill(id) {
-    let card = document.getElementById(`skill-card-${id}`);
-    if (card) {
-        card.style.opacity = "0.5";
-        card.innerHTML = `<h4 style="margin:0; color:#22C55E;">✅ ${reportData.topMissing[id]} Completed!</h4>`;
-    }
-    
-    appState.skillsCompleted++;
-    
-    // Increase ATS Score dynamically
-    reportData.atsScore = Math.min(100, reportData.atsScore + 5);
-    // Increase Job Match dynamically
-    reportData.matchPercent = Math.min(100, reportData.matchPercent + 10);
-    
-    // If all skills completed, unlock roadmap step 2
-    if (appState.skillsCompleted === reportData.topMissing.length) {
-        updateRoadmap(2, false);
-    }
-    
-    addXP(100, "Skill Completed");
-    syncEcosystem();
-    closeModal();
+    try {
+        let card = document.getElementById(`skill-card-${id}`);
+        if (card) {
+            card.style.opacity = "0.5";
+            card.innerHTML = `<h4 style="margin:0; color:#22C55E;">✅ ${reportData.topMissing[id]} Completed!</h4>`;
+        }
+        
+        appState.skillsCompleted++;
+        reportData.atsScore = Math.min(100, reportData.atsScore + 5);
+        reportData.matchPercent = Math.min(100, reportData.matchPercent + 10);
+        
+        if (appState.skillsCompleted === reportData.topMissing.length) {
+            updateRoadmap(2, false);
+        }
+        
+        addXP(100, "Skill Completed");
+        syncEcosystem();
+        closeModal();
+        showToast(`${reportData.topMissing[id]} learned! +100 XP`, "success");
+    } catch(e) { console.error("Complete Skill Error:", e); }
 }
 
 // ==========================================
@@ -1096,9 +1369,10 @@ function finishInterview() {
     `;
     
     appState.interviewsCompleted++;
-    updateRoadmap(3, false); // Unlock roadmap step 3
+    updateRoadmap(3, false); 
     addXP(150, "Interview Completed");
     syncEcosystem();
+    showToast(`Interview completed! Score: ${score}/100`, "success");
 }
 
 function resetInterview() {
@@ -1112,25 +1386,27 @@ function resetInterview() {
 // FEATURE 3: CAREER ROADMAP
 // ==========================================
 function renderRoadmap() {
-    const steps = [
-        { icon: "📄", title: "Resume Creation", desc: "Build your AI optimized resume." },
-        { icon: "🎯", title: "ATS & Job Match", desc: "Analyze your current score." },
-        { icon: "🚀", title: "Skill Learning", desc: "Complete missing skills." },
-        { icon: "🎤", title: "Mock Interview", desc: "Practice your interview skills." },
-        { icon: "🏆", title: "Career Ready", desc: "Apply for jobs with confidence!" }
-    ];
-    
-    document.getElementById('roadmapTrack').innerHTML = steps.map((s, i) => `
-        <div class="roadmap-step ${appState.roadmapProgress[i] ? 'completed' : ''}" id="roadmap-${i}">
-            <div class="roadmap-dot">${appState.roadmapProgress[i] ? '✓' : s.icon}</div>
-            <div class="roadmap-content">
-                <h4>${s.title}</h4>
-                <p>${s.desc}</p>
-                ${!appState.roadmapProgress[i] && i > 0 && appState.roadmapProgress[i-1] ? `<button class="action-btn btn-success" style="padding:8px; font-size:12px; margin:0;" onclick="completeRoadmapStep(${i})">Mark Complete</button>` : ''}
-                ${appState.roadmapProgress[i] ? `<span style="color:#22C55E; font-size:12px; font-weight:700;">Completed! +100 XP</span>` : ''}
+    try {
+        const steps = [
+            { icon: "📄", title: "Resume Creation", desc: "Build your AI optimized resume." },
+            { icon: "🎯", title: "ATS & Job Match", desc: "Analyze your current score." },
+            { icon: "🚀", title: "Skill Learning", desc: "Complete missing skills." },
+            { icon: "🎤", title: "Mock Interview", desc: "Practice your interview skills." },
+            { icon: "🏆", title: "Career Ready", desc: "Apply for jobs with confidence!" }
+        ];
+        
+        document.getElementById('roadmapTrack').innerHTML = steps.map((s, i) => `
+            <div class="roadmap-step ${appState.roadmapProgress[i] ? 'completed' : ''}" id="roadmap-${i}">
+                <div class="roadmap-dot">${appState.roadmapProgress[i] ? '✓' : s.icon}</div>
+                <div class="roadmap-content">
+                    <h4>${s.title}</h4>
+                    <p>${s.desc}</p>
+                    ${!appState.roadmapProgress[i] && i > 0 && appState.roadmapProgress[i-1] ? `<button class="action-btn btn-success" style="padding:8px; font-size:12px; margin:0;" onclick="completeRoadmapStep(${i})">Mark Complete</button>` : ''}
+                    ${appState.roadmapProgress[i] ? `<span style="color:#22C55E; font-size:12px; font-weight:700;">Completed! +100 XP</span>` : ''}
+                </div>
             </div>
-        </div>
-    `).join("");
+        `).join("");
+    } catch(e) { console.error("Roadmap Render Error:", e); }
 }
 
 function updateRoadmap(index, silent) {
@@ -1149,6 +1425,7 @@ function updateRoadmap(index, silent) {
 
 function completeRoadmapStep(index) {
     updateRoadmap(index, false);
+    showToast("Roadmap milestone reached! +100 XP", "success");
 }
 
 // ==========================================
@@ -1186,46 +1463,51 @@ function unlockBadge(id, name, silent) {
         renderBadges();
         if (!silent) {
             triggerCelebration();
+            showToast(`Achievement Unlocked: ${name}!`, "success");
         }
     }
 }
 
 function renderBadges() {
-    const allBadges = [
-        { id: "first_resume", icon: "📄", name: "First Resume" },
-        { id: "ats_expert", icon: "📈", name: "ATS Expert" },
-        { id: "skill_master", icon: "🚀", name: "Skill Master" },
-        { id: "interview_master", icon: "🎤", name: "Interview Pro" },
-        { id: "7_day_streak", icon: "🔥", name: "7 Day Streak" },
-        { id: "career_ready", icon: "🏆", name: "Career Ready" },
-        { id: "1000_xp", icon: "⭐", name: "1000 XP" },
-        { id: "5000_xp", icon: "💎", name: "5000 XP" },
-        { id: "roadmap_done", icon: "🗺️", name: "Map Master" },
-        { id: "networking_pro", icon: "🤝", name: "Network Pro" },
-        { id: "tech_news_master", icon: "📰", name: "News Master" }
-    ];
-    
-    document.getElementById('badgeGrid').innerHTML = allBadges.map(b => `
-        <div class="badge-card ${appState.achievements.includes(b.id) ? 'unlocked' : ''}">
-            <div class="badge-icon">${b.icon}</div>
-            <div class="badge-name">${b.name}</div>
-        </div>
-    `).join("");
+    try {
+        const allBadges = [
+            { id: "first_resume", icon: "📄", name: "First Resume" },
+            { id: "ats_expert", icon: "📈", name: "ATS Expert" },
+            { id: "skill_master", icon: "🚀", name: "Skill Master" },
+            { id: "interview_master", icon: "🎤", name: "Interview Pro" },
+            { id: "7_day_streak", icon: "🔥", name: "7 Day Streak" },
+            { id: "career_ready", icon: "🏆", name: "Career Ready" },
+            { id: "1000_xp", icon: "⭐", name: "1000 XP" },
+            { id: "5000_xp", icon: "💎", name: "5000 XP" },
+            { id: "roadmap_done", icon: "🗺️", name: "Map Master" },
+            { id: "networking_pro", icon: "🤝", name: "Network Pro" },
+            { id: "tech_news_master", icon: "📰", name: "News Master" }
+        ];
+        
+        document.getElementById('badgeGrid').innerHTML = allBadges.map(b => `
+            <div class="badge-card ${appState.achievements.includes(b.id) ? 'unlocked' : ''}">
+                <div class="badge-icon">${b.icon}</div>
+                <div class="badge-name">${b.name}</div>
+            </div>
+        `).join("");
+    } catch(e) { console.error("Render Badges Error:", e); }
 }
 
 function triggerCelebration() {
-    let celeb = document.getElementById('celebration');
-    celeb.innerHTML = '';
-    for(let i=0; i<30; i++) {
-        let c = document.createElement('div');
-        c.className = 'confetti';
-        c.style.left = Math.random() * 100 + '%';
-        c.style.background = ['#4F7CFF', '#8A4DFF', '#22C55E', '#F59E0B'][Math.floor(Math.random()*4)];
-        c.style.animationDelay = Math.random() * 2 + 's';
-        celeb.appendChild(c);
-    }
-    celeb.classList.add('show');
-    setTimeout(() => celeb.classList.remove('show'), 2000);
+    try {
+        let celeb = document.getElementById('celebration');
+        celeb.innerHTML = '';
+        for(let i=0; i<30; i++) {
+            let c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random() * 100 + '%';
+            c.style.background = ['#4F7CFF', '#8A4DFF', '#22C55E', '#F59E0B'][Math.floor(Math.random()*4)];
+            c.style.animationDelay = Math.random() * 2 + 's';
+            celeb.appendChild(c);
+        }
+        celeb.classList.add('show');
+        setTimeout(() => celeb.classList.remove('show'), 2000);
+    } catch(e) { console.error("Celebration Error:", e); }
 }
 
 function showLevelUp(level) {
@@ -1241,158 +1523,160 @@ function closeLevelUp() {
 // CENTRAL ECOSYSTEM SYNC (Single Source of Truth)
 // ==========================================
 function syncEcosystem() {
-    // 1. Calculate Career Readiness
-    let skillsRatio = reportData.topMissing.length > 0 ? (appState.skillsCompleted / reportData.topMissing.length) * 100 : 100;
-    let interviewScore = reportData.interviewScore || 0;
-    let networkScore = reportData.networkingScore || 0;
-    let techScore = reportData.techQuizScore || 0;
-    
-    appState.careerReadiness = Math.floor((reportData.atsScore + reportData.matchPercent + skillsRatio + interviewScore + networkScore + techScore) / 6);
+    try {
+        let skillsRatio = reportData.topMissing.length > 0 ? (appState.skillsCompleted / reportData.topMissing.length) * 100 : 100;
+        let interviewScore = reportData.interviewScore || 0;
+        let networkScore = reportData.networkingScore || 0;
+        let techScore = reportData.techQuizScore || 0;
+        
+        appState.careerReadiness = Math.floor((reportData.atsScore + reportData.matchPercent + skillsRatio + interviewScore + networkScore + techScore) / 6);
 
-    // 2. Update Dashboard UI
-    document.getElementById('userLevel').innerText = `Level ${appState.level}`;
-    document.getElementById('currentXP').innerText = appState.xp;
-    document.getElementById('xpBarFill').style.width = (appState.xp / 1000) * 100 + '%';
-    document.getElementById('topStreakBadge').innerText = `🔥 ${appState.streak}`;
-    document.getElementById('userStreak').innerText = `${appState.streak} Day`;
-    
-    document.getElementById('statATS').innerText = reportData.atsScore;
-    document.getElementById('statMatch').innerText = reportData.matchPercent + '%';
-    document.getElementById('statSkills').innerText = `${appState.skillsCompleted}/${reportData.topMissing.length}`;
-    document.getElementById('statInterview').innerText = appState.interviewsCompleted;
+        document.getElementById('userLevel').innerText = `Level ${appState.level}`;
+        document.getElementById('currentXP').innerText = appState.xp;
+        document.getElementById('xpBarFill').style.width = (appState.xp / 1000) * 100 + '%';
+        document.getElementById('topStreakBadge').innerText = `🔥 ${appState.streak}`;
+        document.getElementById('userStreak').innerText = `${appState.streak} Day`;
+        
+        document.getElementById('statATS').innerText = reportData.atsScore;
+        document.getElementById('statMatch').innerText = reportData.matchPercent + '%';
+        document.getElementById('statSkills').innerText = `${appState.skillsCompleted}/${reportData.topMissing.length}`;
+        document.getElementById('statInterview').innerText = appState.interviewsCompleted;
 
-    // Update Readiness Ring
-    document.getElementById('readinessScore').innerText = appState.careerReadiness + '%';
-    const circumference = 2 * Math.PI * 50;
-    const offset = circumference - (appState.careerReadiness / 100) * circumference;
-    document.getElementById('readinessCircle').style.strokeDashoffset = offset;
+        document.getElementById('readinessScore').innerText = appState.careerReadiness + '%';
+        const circumference = 2 * Math.PI * 50;
+        const offset = circumference - (appState.careerReadiness / 100) * circumference;
+        document.getElementById('readinessCircle').style.strokeDashoffset = offset;
 
-    // 3. Update Dynamic Daily Missions
-    generateDailyMissions();
+        generateDailyMissions();
 
-    // 4. Update Learn View if visible
-    if (document.getElementById('view-learn').classList.contains('active')) {
-        renderLearnView();
-    }
+        if (document.getElementById('view-learn').classList.contains('active')) {
+            renderLearnView();
+        }
+        if (document.getElementById('view-roadmap').classList.contains('active')) {
+            renderRoadmap();
+        }
+        if (document.getElementById('view-report').classList.contains('active')) {
+            renderReport();
+        }
 
-    // 5. Update Roadmap if visible
-    if (document.getElementById('view-roadmap').classList.contains('active')) {
-        renderRoadmap();
-    }
+        if (appState.careerReadiness >= 80 && !appState.roadmapProgress[4]) {
+            updateRoadmap(4, false);
+        }
 
-    // 6. Update Report View if visible
-    if (document.getElementById('view-report').classList.contains('active')) {
-        renderReport();
-    }
-
-    // 7. Check Final Roadmap Completion
-    if (appState.careerReadiness >= 80 && !appState.roadmapProgress[4]) {
-        updateRoadmap(4, false);
-    }
+        if (auth.currentUser && db) {
+            db.collection('users').doc(auth.currentUser.uid).set({
+                appState: appState,
+                reportData: reportData,
+                currentTargetJob: currentTargetJob,
+                currentResumeData: currentResumeData,
+                last_login_time: new Date().toISOString()
+            }, { merge: true }).catch(err => console.error("Error saving user data: ", err));
+        }
+    } catch(e) { console.error("Sync Ecosystem Error:", e); }
 }
 
 // ==========================================
 // DYNAMIC DAILY CAREER BOOST
 // ==========================================
 function generateDailyMissions() {
-    const missionDiv = document.getElementById('dailyMissions');
-    let missions = [];
+    try {
+        const missionDiv = document.getElementById('dailyMissions');
+        let missions = [];
 
-    // Mission 1: Skill Gap
-    if (appState.skillsCompleted < reportData.topMissing.length) {
-        missions.push({
-            icon: "🚀",
-            title: "Learn a Skill",
-            desc: `Complete ${reportData.topMissing[appState.skillsCompleted] || 'a skill'} to boost match`,
-            action: "switchView('learn', document.querySelectorAll('.nav-item')[1])"
-        });
-    }
+        if (appState.skillsCompleted < reportData.topMissing.length) {
+            missions.push({
+                icon: "🚀",
+                title: "Learn a Skill",
+                desc: `Complete ${reportData.topMissing[appState.skillsCompleted] || 'a skill'} to boost match`,
+                action: "switchView('learn', document.querySelectorAll('.nav-item')[1])"
+            });
+        }
 
-    // Mission 2: Interview Practice
-    if (appState.interviewsCompleted < 3) {
-        missions.push({
-            icon: "🎤",
-            title: "Practice Interview",
-            desc: "Complete 1 Mock Interview today",
-            action: "switchView('interview', document.querySelectorAll('.nav-item')[2])"
-        });
-    }
+        if (appState.interviewsCompleted < 3) {
+            missions.push({
+                icon: "🎤",
+                title: "Practice Interview",
+                desc: "Complete 1 Mock Interview today",
+                action: "switchView('interview', document.querySelectorAll('.nav-item')[2])"
+            });
+        }
 
-    // Mission 3: ATS Optimization
-    if (reportData.atsScore < 90) {
-        missions.push({
-            icon: "📈",
-            title: "Improve ATS Score",
-            desc: "Review resume and add more keywords",
-            action: "switchView('resume', document.querySelectorAll('.nav-item')[0])"
-        });
-    }
+        if (reportData.atsScore < 90) {
+            missions.push({
+                icon: "📈",
+                title: "Improve ATS Score",
+                desc: "Review resume and add more keywords",
+                action: "switchView('resume', document.querySelectorAll('.nav-item')[0])"
+            });
+        }
 
-    missionDiv.innerHTML = missions.slice(0, 2).map(m => `
-        <div class="mission-card">
-            <div class="mission-icon">${m.icon}</div>
-            <div class="mission-text">
-                <h4>${m.title}</h4>
-                <p>${m.desc}</p>
+        missionDiv.innerHTML = missions.slice(0, 2).map(m => `
+            <div class="mission-card">
+                <div class="mission-icon">${m.icon}</div>
+                <div class="mission-text">
+                    <h4>${m.title}</h4>
+                    <p>${m.desc}</p>
+                </div>
+                <button class="mission-btn" onclick="${m.action}">GO</button>
             </div>
-            <button class="mission-btn" onclick="${m.action}">GO</button>
-        </div>
-    `).join("");
+        `).join("");
+    } catch(e) { console.error("Daily Missions Error:", e); }
 }
 
 // ==========================================
 // DYNAMIC CAREER REPORT
 // ==========================================
 function renderReport() {
-    const reportContent = document.getElementById('reportContent');
-    const skillsRatio = reportData.topMissing.length > 0 ? (appState.skillsCompleted / reportData.topMissing.length) * 100 : 100;
-    
-    reportContent.innerHTML = `
-        <div class="glass-card report-header">
-            <h1>${reportData.name}'s Career Report</h1>
-            <p style="color:var(--axf-muted); margin:5px 0 0;">Generated dynamically based on your live progress.</p>
-        </div>
+    try {
+        const reportContent = document.getElementById('reportContent');
+        const skillsRatio = reportData.topMissing.length > 0 ? (appState.skillsCompleted / reportData.topMissing.length) * 100 : 100;
+        
+        reportContent.innerHTML = `
+            <div class="glass-card report-header">
+                <h1>${reportData.name || 'User'}'s Career Report</h1>
+                <p style="color:var(--axf-muted); margin:5px 0 0;">Generated dynamically based on your live progress.</p>
+            </div>
 
-        <div class="glass-card report-section">
-            <h3>📊 Live Scores</h3>
-            <div class="report-stat"><span>Overall Readiness</span><b>${appState.careerReadiness}%</b></div>
-            <div class="report-stat"><span>ATS Score</span><b>${reportData.atsScore}/100</b></div>
-            <div class="report-stat"><span>Job Match</span><b>${reportData.matchPercent}%</b></div>
-            <div class="report-stat"><span>Interview Readiness</span><b>${reportData.interviewScore}/100</b></div>
-            <div class="report-stat"><span>Networking Score</span><b>${reportData.networkingScore}/100</b></div>
-            <div class="report-stat" style="border:none;"><span>Tech News Quiz</span><b>${reportData.techQuizScore}/100</b></div>
-        </div>
+            <div class="glass-card report-section">
+                <h3>📊 Live Scores</h3>
+                <div class="report-stat"><span>Overall Readiness</span><b>${appState.careerReadiness}%</b></div>
+                <div class="report-stat"><span>ATS Score</span><b>${reportData.atsScore}/100</b></div>
+                <div class="report-stat"><span>Job Match</span><b>${reportData.matchPercent}%</b></div>
+                <div class="report-stat"><span>Interview Readiness</span><b>${reportData.interviewScore}/100</b></div>
+                <div class="report-stat"><span>Networking Score</span><b>${reportData.networkingScore}/100</b></div>
+                <div class="report-stat" style="border:none;"><span>Tech News Quiz</span><b>${reportData.techQuizScore}/100</b></div>
+            </div>
 
-        <div class="glass-card report-section">
-            <h3>🚀 Skill Gap Status</h3>
-            ${reportData.topMissing.length > 0 ? reportData.topMissing.map((s, i) => `
-                <div style="margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
-                        <span>${s}</span>
-                        <span>${i < appState.skillsCompleted ? '✅ Completed' : '⏳ Pending'}</span>
+            <div class="glass-card report-section">
+                <h3>🚀 Skill Gap Status</h3>
+                ${reportData.topMissing.length > 0 ? reportData.topMissing.map((s, i) => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+                            <span>${s}</span>
+                            <span>${i < appState.skillsCompleted ? '✅ Completed' : '⏳ Pending'}</span>
+                        </div>
+                        <div class="progress-track" style="margin:0;"><div class="progress-fill" style="width:${i < appState.skillsCompleted ? 100 : 0}%; background:${i < appState.skillsCompleted ? '#22C55E' : '#E5E7EB'};"></div></div>
                     </div>
-                    <div class="progress-track" style="margin:0;"><div class="progress-fill" style="width:${i < appState.skillsCompleted ? 100 : 0}%; background:${i < appState.skillsCompleted ? '#22C55E' : '#E5E7EB'};"></div></div>
-                </div>
-            `).join("") : "<p>No skill gaps detected!</p>"}
-        </div>
+                `).join("") : "<p>No skill gaps detected!</p>"}
+            </div>
 
-        <div class="glass-card report-section">
-            <h3>🗺️ Roadmap Progress</h3>
-            ${appState.roadmapProgress.map((done, i) => `
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:14px;">
-                    <span style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; ${done ? 'background:#22C55E; color:white;' : 'background:#E5E7EB;'}">${done ? '✓' : i+1}</span>
-                    <span>${['Resume Creation', 'ATS & Job Match', 'Skill Learning', 'Mock Interview', 'Career Ready'][i]}</span>
-                </div>
-            `).join("")}
-        </div>
-    `;
+            <div class="glass-card report-section">
+                <h3>🗺️ Roadmap Progress</h3>
+                ${appState.roadmapProgress.map((done, i) => `
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; font-size:14px;">
+                        <span style="width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; ${done ? 'background:#22C55E; color:white;' : 'background:#E5E7EB;'}">${done ? '✓' : i+1}</span>
+                        <span>${['Resume Creation', 'ATS & Job Match', 'Skill Learning', 'Mock Interview', 'Career Ready'][i]}</span>
+                    </div>
+                `).join("")}
+            </div>
+        `;
+    } catch(e) { console.error("Render Report Error:", e); }
 }
 
 // ==========================================
 // AI DAILY OUTREACH CHALLENGE (ADVANCED)
 // ==========================================
 function loadDailyChallenges() {
-    // Simulate AI loading a dummy profile dynamically
     document.getElementById('outreachDesc').innerText = "Target: Alex Chen, Hiring Manager at Stripe. Choose your message type and craft the perfect pitch.";
     document.getElementById('techNewsDesc').innerText = "Today's Topic: Real-time AI hiring trends and industry updates.";
 }
@@ -1432,11 +1716,9 @@ function selectMsgType(type, btn) {
 function submitOutreach() {
     const msg = document.getElementById('outreachInput').value;
     if(msg.length < 20) {
-        alert("Please write a more detailed message (min 20 chars).");
-        return;
+        return showToast("Please write a more detailed message (min 20 chars).", "warning");
     }
 
-    // Simulate Advanced AI Evaluation
     let score = Math.floor(Math.random() * 20) + 75; 
     reportData.networkingScore = score;
     appState.outreachCompletedToday = true;
@@ -1491,6 +1773,7 @@ function finishOutreach() {
     unlockBadge("networking_pro", "Network Pro");
     syncEcosystem();
     closeModal();
+    showToast("Outreach challenge completed! +150 XP", "success");
 }
 
 // ==========================================
@@ -1522,17 +1805,20 @@ function startTechNews() {
 }
 
 function playAudio() {
-    const currentYear = new Date().getFullYear();
-    const todayDate = new Date().toLocaleDateString();
-    const text = `As of ${todayDate}, AI and automation are heavily integrated into the hiring process. In ${currentYear}, companies are focusing on skill-based hiring rather than degrees. If you are aiming for a ${currentTargetJob || 'tech'} role, ensure your portfolio highlights real-world AI integrations and data-driven decision making.`;
-    
-    if('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1;
-        speechSynthesis.speak(utterance);
-    } else {
-        alert("Audio not supported on this browser.");
-    }
+    try {
+        const currentYear = new Date().getFullYear();
+        const todayDate = new Date().toLocaleDateString();
+        const text = `As of ${todayDate}, AI and automation are heavily integrated into the hiring process. In ${currentYear}, companies are focusing on skill-based hiring rather than degrees. If you are aiming for a ${currentTargetJob || 'tech'} role, ensure your portfolio highlights real-world AI integrations and data-driven decision making.`;
+        
+        if('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1;
+            speechSynthesis.speak(utterance);
+            showToast("Playing audio...", "success");
+        } else {
+            showToast("Audio not supported on this browser.", "error");
+        }
+    } catch(e) { console.error("Audio Error:", e); }
 }
 
 function startTechQuiz() {
@@ -1559,11 +1845,13 @@ function checkTechQuiz(el, isCorrect) {
         }
     });
     
-    // Show correct answer if wrong
     if(!isCorrect) {
         parent.querySelectorAll('.quiz-option').forEach(o => {
             if(o.innerText.startsWith('B')) o.classList.add('correct');
         });
+        showToast("Incorrect answer!", "error");
+    } else {
+        showToast("Correct answer!", "success");
     }
 
     document.getElementById('quizNext').style.display = 'block';
@@ -1578,6 +1866,105 @@ function finishTechQuiz() {
     unlockBadge("tech_news_master", "News Master");
     syncEcosystem();
     closeModal();
+    showToast(`Quiz completed! Score: ${score}/100`, "success");
+}
+
+// ==========================================
+// NEW: PERSONALIZED AI FEEDBACK
+// ==========================================
+async function generateAIFeedback(uid) {
+    const feedbackList = document.getElementById('aiFeedbackList');
+    if (!feedbackList) return;
+    
+    try {
+        const res = await fetchWithRetry('/api/generate-feedback', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: uid })
+        });
+        const data = await res.json();
+        
+        if (data.feedback && data.feedback.length > 0) {
+            feedbackList.innerHTML = data.feedback.map(f => `
+                <div style="font-size: 13px; color: var(--axf-text); background: #F8FAFC; padding: 10px; border-radius: 8px; border-left: 3px solid var(--axf-primary);">
+                    💡 ${f}
+                </div>
+            `).join("");
+        } else {
+            feedbackList.innerHTML = `<div style="font-size: 13px; color: var(--axf-muted); text-align: center;">Complete your profile to get personalized feedback.</div>`;
+        }
+    } catch(e) {
+        feedbackList.innerHTML = `<div style="font-size: 13px; color: var(--axf-danger); text-align: center;">Could not load feedback. <button onclick="generateAIFeedback('${uid}')" style="color:var(--axf-primary); font-weight:700;">Retry</button></div>`;
+    }
+}
+
+// ==========================================
+// NEW: DAILY CAREER CHALLENGE
+// ==========================================
+async function loadDailyChallenge(uid) {
+    const challengeList = document.getElementById('dailyChallengeList');
+    if (!challengeList) return;
+    
+    try {
+        const res = await fetchWithRetry('/api/generate-daily-challenge', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: uid })
+        });
+        const data = await res.json();
+        
+        if (data.missions && data.missions.length > 0) {
+            renderDailyChallenge(data.missions, data.completed || []);
+        } else {
+            challengeList.innerHTML = `<div style="font-size: 13px; opacity: 0.7; text-align: center;">No challenges available today.</div>`;
+        }
+    } catch(e) {
+        challengeList.innerHTML = `<div style="font-size: 13px; opacity: 0.7; text-align: center;">Could not load challenges. <button onclick="loadDailyChallenge('${uid}')" style="color:white; font-weight:700; text-decoration:underline;">Retry</button></div>`;
+    }
+}
+
+function renderDailyChallenge(missions, completed) {
+    const challengeList = document.getElementById('dailyChallengeList');
+    challengeList.innerHTML = missions.map(m => {
+        const isDone = completed.includes(m.id);
+        return `
+            <div style="display: flex; align-items: center; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 12px; margin-bottom: 8px;">
+                <div style="flex: 1;">
+                    <h4 style="margin: 0; font-size: 14px; color: white;">${m.title}</h4>
+                    <p style="margin: 2px 0 0; font-size: 12px; opacity: 0.8; color: #ccc;">${m.desc}</p>
+                </div>
+                <button class="mission-complete-btn" style="${isDone ? 'background: #22C55E;' : 'background: white; color: #1a1a2e;'}" 
+                    onclick="completeChallenge('${m.id}')" ${isDone ? 'disabled' : ''}>
+                    ${isDone ? '✓ Done' : '+50 XP'}
+                </button>
+            </div>
+        `;
+    }).join("");
+}
+
+async function completeChallenge(missionId) {
+    const uid = auth.currentUser ? auth.currentUser.uid : "guest";
+    try {
+        const res = await fetchWithRetry('/api/complete-challenge', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: uid, mission_id: missionId })
+        });
+        const data = await res.json();
+        
+        if (data.appState) appState = data.appState;
+        if (data.reportData) reportData = data.reportData;
+        
+        syncEcosystem();
+        showToast("Challenge mission completed! +50 XP", "success");
+        
+        if (appState.daily_challenge) {
+            renderDailyChallenge(appState.daily_challenge.missions, appState.daily_challenge.completed);
+        }
+    } catch(e) {
+        console.error("Error completing challenge:", e);
+        showToast("Failed to complete challenge.", "error");
+    }
 }
 
 // ==========================================
@@ -1588,30 +1975,37 @@ function openModal() {
 }
 function closeModal() {
     document.getElementById('genericModal').classList.remove('show');
-    // Stop audio if playing
     if('speechSynthesis' in window) speechSynthesis.cancel();
 }
 
 function switchView(viewName, btn) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('view-' + viewName).classList.add('active');
-    
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    
-    if (viewName === 'roadmap') renderRoadmap();
-    if (viewName === 'achievements') renderBadges();
-    if (viewName === 'report') renderReport();
-    if (viewName === 'learn') renderLearnView();
-    
-    window.scrollTo(0, 0);
+    try {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-' + viewName).classList.add('active');
+        
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        
+        if (viewName === 'roadmap') renderRoadmap();
+        if (viewName === 'achievements') renderBadges();
+        if (viewName === 'report') renderReport();
+        if (viewName === 'learn') renderLearnView();
+        if (viewName === 'resume') renderResumeTemplate(currentTplId);
+        
+        window.scrollTo(0, 0);
+    } catch(e) { console.error("Switch View Error:", e); }
 }
 
 // Init
-renderBadges();
-renderRoadmap();
-syncEcosystem();
-loadDailyChallenges();
+try {
+    renderBadges();
+    renderRoadmap();
+    syncEcosystem();
+    loadDailyChallenges();
+} catch(e) {
+    console.error("Initialization Error:", e);
+    showToast("App failed to initialize properly. Please refresh.", "error");
+}
 </script>
 </body>
 </html>
