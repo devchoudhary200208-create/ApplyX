@@ -1,15 +1,63 @@
 import os
 import json
+import logging
 from datetime import datetime, date, timedelta
 import time
 import uuid
 import random # Load Balancer ke liye add kiya gaya hai
 from collections import defaultdict # Rate Limiting ke liye
+import re # For regex parsing in AI feedback
+import threading
 
 import requests
 import urllib3
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
+
+# ==========================================
+# PRODUCTION LOGGING SETUP
+# ==========================================
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("ApplyX")
+logger.info("Starting Apply.X Production Server...")
+
+# ==========================================
+# FIRESTORE SECURITY RULES (For Firebase Console)
+# ==========================================
+# rules_version = '2';
+# service cloud.firestore {
+#   match /databases/{database}/documents {
+#     match /users/{userId} {
+#       allow read, write: if request.auth != null && request.auth.uid == userId;
+#     }
+#     match /interviews/{sessionId} {
+#       allow read, write: if request.auth != null;
+#     }
+#   }
+# }
+
+# Firebase Admin SDK try import karna
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    if not firebase_admin._apps:
+        cred_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "serviceAccountKey.json")
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            logger.info("✅ Firebase Admin (Firestore) Initialized for Permanent Save.")
+        else:
+            db = None
+            logger.warning("⚠️ serviceAccountKey.json not found. Using local JSON only.")
+    else:
+        db = firestore.client()
+except ImportError:
+    db = None
+    logger.warning("⚠️ firebase_admin not installed. Using local JSON only.")
 
 # Pydroid 3 me SSL warnings ko ignore karne ke liye
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -37,9 +85,9 @@ for _candidate in _ENV_CANDIDATES:
         break
 
 if _env_loaded_path:
-    print(f"✅ Loaded env file: {_env_loaded_path}")
+    logger.info(f"✅ Loaded env file: {_env_loaded_path}")
 else:
-    print(f"⚠️ No .env or .ev file found in {BASE_DIR} — make sure your key file sits in the SAME folder as career.py.")
+    logger.warning(f"⚠️ No .env or .ev file found in {BASE_DIR} — make sure your key file sits in the SAME folder as career.py.")
 
 # -----------------------------
 # API KEYS (6 Keys Configuration)
@@ -51,19 +99,21 @@ KIMI_API_KEY = os.getenv("KIMI_API_KEY", "")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 GLM_API_KEY = os.getenv("GLM_API_KEY", "") # 6th NVIDIA Key added
 
-print("\n--- Checking API Keys ---")
-print(f"Gemini: {'Found' if GEMINI_API_KEY else 'MISSING!'}")
-print(f"Groq: {'Found' if GROQ_API_KEY else 'MISSING!'}")
-print(f"OpenAI (NVIDIA): {'Found' if OPENAI_API_KEY else 'MISSING!'}")
-print(f"Kimi (NVIDIA): {'Found' if KIMI_API_KEY else 'MISSING!'}")
-print(f"DeepSeek (NVIDIA): {'Found' if DEEPSEEK_API_KEY else 'MISSING!'}")
-print(f"GLM (NVIDIA): {'Found' if GLM_API_KEY else 'MISSING!'}")
-print("-------------------------\n")
+logger.info("\n--- Checking API Keys ---")
+logger.info(f"Gemini: {'Found' if GEMINI_API_KEY else 'MISSING!'}")
+logger.info(f"Groq: {'Found' if GROQ_API_KEY else 'MISSING!'}")
+logger.info(f"OpenAI (NVIDIA): {'Found' if OPENAI_API_KEY else 'MISSING!'}")
+logger.info(f"Kimi (NVIDIA): {'Found' if KIMI_API_KEY else 'MISSING!'}")
+logger.info(f"DeepSeek (NVIDIA): {'Found' if DEEPSEEK_API_KEY else 'MISSING!'}")
+logger.info(f"GLM (NVIDIA): {'Found' if GLM_API_KEY else 'MISSING!'}")
+logger.info("-------------------------\n")
 
 # -----------------------------
-# RATE LIMITER (App Protection)
+# RATE LIMITER & DUPLICATE REQUEST PREVENTION (App Protection)
 # -----------------------------
 rate_limit_data = defaultdict(list)
+processing_users = set() # Prevents duplicate concurrent API calls from same user
+lock = threading.Lock()
 
 def rate_limit_check():
     user_ip = request.remote_addr or "unknown"
@@ -90,7 +140,7 @@ def _load_json(path, default):
             with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
     except Exception as e:
-        print(f"Load JSON failed for {path}: {e}")
+        logger.error(f"Load JSON failed for {path}: {e}")
     return default
 
 def _save_json(path, data):
@@ -98,7 +148,7 @@ def _save_json(path, data):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
-        print(f"Save JSON failed for {path}: {e}")
+        logger.error(f"Save JSON failed for {path}: {e}")
 
 # The Global State Object
 careerState = _load_json(STATE_FILE, {})
@@ -133,10 +183,46 @@ def _get_user_state(user_id="guest"):
             "career_score": 0,
             "career_readiness": 0,
             "notifications": [],
-            "last_updated": ""
+            "last_updated": "",
+            "last_login_time": "",
+            "ai_feedback": [],
+            "daily_challenge": {"date": "", "missions": [], "completed": []}
         }
         _save_json(STATE_FILE, careerState)
     return careerState[user_id]
+
+# -----------------------------
+# MEMORY OPTIMIZATION (Auto Cleanup)
+# -----------------------------
+def _cleanup_memory():
+    """Prevents memory leaks by deleting sessions older than 2 hours and keeping history limited."""
+    global interview_history
+    global interview_sessions
+    
+    try:
+        now = datetime.now()
+        to_remove = []
+        for sid, sess in interview_sessions.items():
+            created_str = sess.get("created_at")
+            if created_str:
+                created = datetime.fromisoformat(created_str)
+                if (now - created).total_seconds() > 7200: # 2 hours
+                    to_remove.append(sid)
+        
+        for sid in to_remove:
+            del interview_sessions[sid]
+            
+        if to_remove:
+            _save_json(SESSIONS_FILE, interview_sessions)
+            logger.info(f"🧹 Cleaned up {len(to_remove)} old interview sessions.")
+            
+        # Keep only last 500 interviews in history to prevent bloat
+        if len(interview_history) > 500:
+            interview_history = interview_history[-500:]
+            _save_json(HISTORY_FILE, interview_history)
+            logger.info("🧹 Trimmed interview history to last 500 records.")
+    except Exception as e:
+        logger.error(f"Memory Cleanup Error: {e}")
 
 # -----------------------------
 # CENTRAL SYNC LOGIC (The Brain)
@@ -171,8 +257,18 @@ def sync_state(user_id="guest"):
     
     # 6. Update Timestamp
     state["last_updated"] = datetime.now().isoformat(timespec="seconds")
+    if not state.get("last_login_time"):
+        state["last_login_time"] = state["last_updated"]
     
     _save_json(STATE_FILE, careerState)
+    
+    # 7. Auto-Sync to Firebase Firestore
+    if db:
+        try:
+            db.collection('users').document(user_id).set(state)
+        except Exception as e:
+            logger.error(f"Firestore Sync Error: {e}")
+            
     return state
 
 def _check_achievements(state):
@@ -354,7 +450,7 @@ def generate_ai_response(prompt):
         try: 
             return fn(prompt)
         except Exception as e: 
-            print(f"❌ {name} failed: {e}")
+            logger.warning(f"❌ {name} failed: {e}")
 
     # 4. If all 6 keys fail in first attempt, wait 2 seconds and retry the shuffled list
     time.sleep(2)
@@ -363,12 +459,12 @@ def generate_ai_response(prompt):
         try: 
             return fn(prompt)
         except Exception as e: 
-            print(f"❌ {name} failed on retry: {e}")
+            logger.error(f"❌ {name} failed on retry: {e}")
 
     raise Exception("All 6 AI providers failed.")
 
 def friendly_error_response(default_msg=None):
-    print(f"🚨 API Error: {default_msg}")
+    logger.error(f"🚨 API Error: {default_msg}")
     return jsonify({"error": "AI servers are busy right now. Please wait and try again."}), 500
 
 # -----------------------------
@@ -489,11 +585,23 @@ def _save_history_entry(entry):
 @app.route("/api/state", methods=["GET"])
 def get_state():
     user_id = request.args.get("user_id", "guest")
+    
+    # If Firestore is active, try to load from there first
+    if db:
+        try:
+            doc_ref = db.collection('users').document(user_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                careerState[user_id] = doc.to_dict()
+                logger.info(f"✅ Restored state for {user_id} from Firestore.")
+        except Exception as e:
+            logger.error(f"Firestore Read Error: {e}")
+            
     return jsonify(sync_state(user_id))
 
 @app.route("/api/complete-skill", methods=["POST"])
 def complete_skill():
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     user_id = data.get("user_id", "guest")
     skill = data.get("skill", "")
     state = _get_user_state(user_id)
@@ -509,7 +617,7 @@ def complete_skill():
 
 @app.route("/api/complete-mission", methods=["POST"])
 def complete_mission():
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     user_id = data.get("user_id", "guest")
     mission_id = data.get("mission_id", "")
     state = _get_user_state(user_id)
@@ -524,6 +632,105 @@ def complete_mission():
     _add_notification(state, "Daily mission completed! +50 XP.")
     
     return jsonify(sync_state(user_id))
+
+# NEW FEATURE: Personalized AI Feedback
+@app.route("/api/generate-feedback", methods=["POST"])
+def generate_feedback():
+    if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _get_user_id(data)
+        state = _get_user_state(user_id)
+        
+        prompt = f"""
+        You are an AI Career Coach. Based on the following user data, generate exactly 3 personalized action items.
+        Target Job: {state.get('profile', {}).get('target_job', 'Software Developer')}
+        ATS Score: {state.get('ats_score', 0)}/100
+        Job Match: {state.get('job_match_score', 0)}%
+        Missing Skills: {state.get('skill_gap', {}).get('missing_skills', [])}
+        Skills Learned: {state.get('skills_learned', [])}
+        Interview Avg Score: {sum(state.get('interview_scores', [0]))/len(state.get('interview_scores', [0])) if state.get('interview_scores') else 0}
+        
+        Return ONLY a valid JSON array of 3 strings. Example: ["action 1", "action 2", "action 3"]
+        """
+        
+        raw = generate_ai_response(prompt)
+        match = re.search(r'\[.*\]', raw, re.DOTALL)
+        if match:
+            feedback = json.loads(match.group(0))
+            state["ai_feedback"] = feedback
+            _save_json(STATE_FILE, careerState)
+            if db:
+                try: db.collection('users').document(user_id).set({"ai_feedback": feedback}, merge=True)
+                except: pass
+            return jsonify({"feedback": feedback})
+        return jsonify({"feedback": []}), 200
+    except Exception as e:
+        return friendly_error_response(str(e))
+
+# NEW FEATURE: Daily Career Challenge
+@app.route("/api/generate-daily-challenge", methods=["POST"])
+def generate_daily_challenge():
+    if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _get_user_id(data)
+        state = _get_user_state(user_id)
+        today = _today_str()
+        
+        # If already generated today, return existing
+        if state.get("daily_challenge", {}).get("date") == today and len(state.get("daily_challenge", {}).get("missions", [])) >= 3:
+            return jsonify(state["daily_challenge"])
+            
+        prompt = f"""
+        Generate 3 daily career missions for a user targeting {state.get('profile', {}).get('target_job', 'Software Developer')}.
+        ATS Score: {state.get('ats_score', 0)}. Missing Skills: {state.get('skill_gap', {}).get('missing_skills', [])}.
+        
+        Return ONLY JSON: {{"missions": [{{"id": "mission_1", "title": "short title", "desc": "short desc", "xp": 50}}]}}
+        """
+        raw = generate_ai_response(prompt)
+        parsed = _safe_json_loads(raw, {"missions": []})
+        
+        state["daily_challenge"] = {
+            "date": today,
+            "missions": parsed.get("missions", [])[:3],
+            "completed": []
+        }
+        _save_json(STATE_FILE, careerState)
+        if db:
+            try: db.collection('users').document(user_id).set({"daily_challenge": state["daily_challenge"]}, merge=True)
+            except: pass
+            
+        return jsonify(state["daily_challenge"])
+    except Exception as e:
+        return friendly_error_response(str(e))
+
+@app.route("/api/complete-challenge", methods=["POST"])
+def complete_challenge():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_id = _get_user_id(data)
+        mission_id = data.get("mission_id", "")
+        state = _get_user_state(user_id)
+        
+        if mission_id and mission_id not in state.get("daily_challenge", {}).get("completed", []):
+            state["daily_challenge"]["completed"].append(mission_id)
+            state["total_xp"] += 50
+            
+            today = _today_str()
+            if today != state.get("last_practice_date"):
+                state["daily_streak"] += 1
+                state["last_practice_date"] = today
+                
+            _add_notification(state, "Challenge mission completed! +50 XP.")
+            _save_json(STATE_FILE, careerState)
+            if db:
+                try: db.collection('users').document(user_id).set(state, merge=True)
+                except: pass
+                
+        return jsonify(sync_state(user_id))
+    except Exception as e:
+        return friendly_error_response(str(e))
 
 
 # -----------------------------
@@ -548,7 +755,7 @@ def dashboard():
 def daily_question():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         target_job = data.get("target_job", "Software Developer").strip()
         prompt = f"""Generate ONE practical interview question for a {target_job} role. Make it behavioral or technical but easy to understand. No extra text, just the question."""
         question_text = generate_ai_response(prompt)
@@ -560,7 +767,7 @@ def daily_question():
 def build_resume():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         user_id = _get_user_id(data)
         state = _get_user_state(user_id)
         
@@ -597,7 +804,7 @@ Experience: {data.get("experience", "").strip()}"""
 def skill_gap():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         user_id = _get_user_id(data)
         state = _get_user_state(user_id)
         
@@ -639,7 +846,7 @@ Respond only in this JSON format, no extra text, no markdown:
 def job_match():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         user_id = _get_user_id(data)
         state = _get_user_state(user_id)
         
@@ -684,7 +891,7 @@ Respond only in this JSON format, no extra text, no markdown:
 def ats_score():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         user_id = _get_user_id(data)
         state = _get_user_state(user_id)
         
@@ -735,7 +942,7 @@ Respond only in this JSON format, no extra text, no markdown:
 def daily_boost():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         name = data.get("name", "").strip()
         target_job = data.get("target_job", "").strip()
         skills = data.get("skills", [])
@@ -800,7 +1007,7 @@ def mock_interview(): return render_template("mock_interview.html")
 def start_interview():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         user_id = _get_user_id(data)
         state = _get_user_state(user_id)
         
@@ -831,7 +1038,7 @@ def start_interview():
 def generate_interview_question():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         session_id = data.get("session_id", "").strip()
         if not session_id: return jsonify({"error": "session_id is required"}), 400
 
@@ -856,7 +1063,7 @@ def generate_interview_question():
 def submit_interview_answer():
     if rate_limit_check(): return jsonify({"error": "Too many requests! Please wait a minute."}), 429
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         session_id = data.get("session_id", "").strip()
         answer = data.get("answer", "").strip()
         question = data.get("question", {})
@@ -886,7 +1093,7 @@ def submit_interview_answer():
 @app.route("/finish-interview", methods=["POST"])
 def finish_interview():
     try:
-        data = request.json or {}
+        data = request.get_json(silent=True) or {}
         session_id = data.get("session_id", "").strip()
         user_id = _get_user_id(data)
         duration_seconds = int(data.get("duration_seconds", 0) or 0)
@@ -925,6 +1132,10 @@ def finish_interview():
         session_obj["completed"] = True
         session_obj["report"] = report
         _save_session(session_obj)
+        
+        # Trigger Memory Cleanup periodically
+        if len(interview_history) % 10 == 0:
+            _cleanup_memory()
 
         return jsonify({"session_id": session_id, "report": report, "history_entry": history_entry})
     except Exception as e:
@@ -961,11 +1172,16 @@ def career_progress_route():
 # -----------------------------
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "architecture": "Centralized careerState"}), 200
+    return jsonify({"status": "ok", "architecture": "Centralized careerState", "memory_cleanup": "active"}), 200
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(e):
+    logger.error(f"🚨 Unhandled Exception: {e}", exc_info=True)
+    return jsonify({"error": "An unexpected internal server error occurred."}), 500
 
 @app.errorhandler(500)
 def handle_500_error(e):
-    print(f"🚨 Server Error: {e}")
+    logger.error(f"🚨 Server Error: {e}")
     return jsonify({"error": "Internal Server Error. Please try again."}), 500
 
 @app.errorhandler(404)
@@ -973,7 +1189,7 @@ def handle_404_error(e):
     return jsonify({"error": "Page Not Found."}), 404
 
 if __name__ == "__main__":
-    print("🚀 Starting Apply.X Secure Server on http://127.0.0.1:5000")
+    logger.info("🚀 Starting Apply.X Secure Server on http://127.0.0.1:5000")
     # debug=False rakha gaya hai taaki hacker aapka code dekh na sake
     # threaded=True hai taaki multiple users ek saath access kar sakein
     app.run(debug=False, host="0.0.0.0", port=5000, threaded=True)
