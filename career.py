@@ -16,8 +16,8 @@ from urllib.parse import urlencode, urlparse
 
 import requests
 from flask import Flask, render_template, request, jsonify, g
+from flask_cors import CORS
 from dotenv import load_dotenv
-
 # ==========================================
 # PRODUCTION LOGGING SETUP
 # ==========================================
@@ -121,14 +121,16 @@ MAX_STRING_FIELD_LENGTH = int(os.getenv("MAX_STRING_FIELD_LENGTH", "5000"))
 # ==========================================
 AI_USER_REQUEST_LIMIT = int(os.getenv("AI_USER_REQUEST_LIMIT", "30"))
 AI_USER_WINDOW_SECONDS = int(os.getenv("AI_USER_WINDOW_SECONDS", "3600"))
+
 AI_IP_REQUEST_LIMIT = int(os.getenv("AI_IP_REQUEST_LIMIT", "100"))
 AI_IP_WINDOW_SECONDS = int(os.getenv("AI_IP_WINDOW_SECONDS", "3600"))
-
 # ==========================================
 # REDIS RATE LIMITING (TASK 6) - OPTIONAL
 # ==========================================
 REDIS_URL = os.getenv("REDIS_URL", "")
-REDIS_RATE_LIMIT_ENABLED = os.getenv("REDIS_RATE_LIMIT_ENABLED", "false").lower() == "true"
+REDIS_RATE_LIMIT_ENABLED = os.getenv(
+    "REDIS_RATE_LIMIT_ENABLED", "false"
+).lower() == "true"
 
 _redis_client = None
 _redis_available = False
@@ -136,17 +138,33 @@ _redis_available = False
 if REDIS_URL and REDIS_RATE_LIMIT_ENABLED:
     try:
         import redis as redis_module
-        _redis_client = redis_module.from_url(REDIS_URL, socket_connect_timeout=3, socket_timeout=5)
+
+        _redis_client = redis_module.from_url(
+            REDIS_URL,
+            socket_connect_timeout=3,
+            socket_timeout=5
+        )
+
         _redis_client.ping()
         _redis_available = True
         logger.info("Redis rate limiting enabled.")
-    except ImportError:
-        logger.warning("REDIS_RATE_LIMIT_ENABLED=true but redis package not installed. Using local fallback.")
-    except Exception:
-        logger.warning("Redis connection failed. Using local fallback.")
-else:
-    logger.info("Redis rate limiting not configured. Using in-memory rate limiting.")
 
+    except ImportError:
+        logger.warning(
+            "REDIS_RATE_LIMIT_ENABLED=true but redis package "
+            "not installed. Using local fallback."
+        )
+
+    except Exception:
+        logger.warning(
+            "Redis connection failed. Using local fallback."
+        )
+
+else:
+    logger.info(
+        "Redis rate limiting not configured. "
+        "Using in-memory rate limiting."
+    )
 # ==========================================
 # CORS + SECURITY HEADERS (TASK 10, 11)
 # ==========================================
@@ -163,33 +181,91 @@ CSP_POLICY = os.getenv(
     "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 )
 
+# --- CORS: environment-controlled origin ---
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": allowed_origins,
+            "supports_credentials": True
+        }
+    }
+)
+
+
 @app.after_request
 def add_security_headers(response):
-    # --- CORS: environment-controlled origin, never '*' in production ---
-    origin = request.headers.get("Origin", "")
-    if FRONTEND_ORIGINS:
-        if origin in FRONTEND_ORIGINS:
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Vary"] = "Origin"
-    elif IS_DEVELOPMENT and origin:
-        # Development-only convenience fallback when FRONTEND_ORIGIN is not configured.
+    origin = request.headers.get("Origin")
+
+    if origin and origin in allowed_origins:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Vary"] = "Origin"
-    response.headers.setdefault("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-    response.headers.setdefault("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-    response.headers.setdefault("Access-Control-Max-Age", "600")
-    # --- Standard security headers ---
-    response.headers.setdefault("X-Content-Type-Options", "nosniff")
-    response.headers.setdefault("X-Frame-Options", "DENY")
-    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=(), usb=()")
-    response.headers.setdefault("Content-Security-Policy", CSP_POLICY)
-    if request.is_secure or os.getenv("FORCE_HTTPS", "false").lower() == "true":
-        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-    # Sensitive API responses must not be cached.
-    if request.path != "/":
-        response.headers.setdefault("Cache-Control", "no-store")
+
+    response.headers.setdefault(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-Requested-With"
+    )
+
+    response.headers.setdefault(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    )
+
+    response.headers.setdefault(
+        "Access-Control-Max-Age",
+        "600"
+    )
+
+    # --- Security headers ---
+    response.headers.setdefault(
+        "X-Content-Type-Options",
+        "nosniff"
+    )
+
+    response.headers.setdefault(
+        "X-Frame-Options",
+        "DENY"
+    )
+
+    response.headers.setdefault(
+        "Referrer-Policy",
+        "strict-origin-when-cross-origin"
+    )
+
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+    )
+
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        CSP_POLICY
+    )
+
+    if (
+        request.is_secure
+        or os.getenv("FORCE_HTTPS", "false").lower() == "true"
+    ):
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains"
+        )
+
+    # Do not cache API responses
+    if request.path.startswith("/api/"):
+        response.headers.setdefault(
+            "Cache-Control",
+            "no-store"
+        )
+
     return response
+
 
 # ==========================================
 # AI PROVIDER CONFIGURATION
@@ -644,83 +720,172 @@ def _local_rate_check(data_dict, key, limit, window, lock):
 def rate_limit_check():
     """Legacy per-IP rate limit helper (preserved for compatibility)."""
     user_ip = request.remote_addr or "unknown"
-    return not _local_rate_check(local_rate_data, user_ip, 20, 60, rate_lock)[0]
+    return not _local_rate_check(
+        local_rate_data, user_ip, 20, 60, rate_lock
+    )[0]
+
 
 def rate_limit(limit=20, window=60, scope="default"):
     """Reusable decorator rate limiter (per client IP)."""
+
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             identity = request.remote_addr or "unknown"
             key = f"{scope}:{identity}"
-            
+
             if REDIS_RATE_LIMIT_ENABLED and _redis_available:
-                allowed, retry_after = _redis_rate_check(key, limit, window)
+                allowed, retry_after = _redis_rate_check(
+                    key, limit, window
+                )
+
                 if allowed is False:
-                    _log_security_event("rate_limit_violation", scope=scope, ip=identity, path=request.path)
-                    resp = jsonify({"success": False, "error": "Too many requests. Please wait."})
+                    _log_security_event(
+                        "rate_limit_violation",
+                        scope=scope,
+                        ip=identity,
+                        path=request.path
+                    )
+
+                    resp = jsonify({
+                        "success": False,
+                        "error": "Too many requests. Please wait."
+                    })
                     resp.status_code = 429
+
                     if retry_after:
                         resp.headers["Retry-After"] = str(retry_after)
+
                     return resp
-                if allowed is not True:
-                    pass
-            
-            allowed, retry_after = _local_rate_check(local_rate_data, key, limit, window, rate_lock)
+
+            allowed, retry_after = _local_rate_check(
+                local_rate_data,
+                key,
+                limit,
+                window,
+                rate_lock
+            )
+
             if not allowed:
-                _log_security_event("rate_limit_violation", scope=scope, ip=identity, path=request.path)
-                resp = jsonify({"success": False, "error": "Too many requests. Please wait."})
+                _log_security_event(
+                    "rate_limit_violation",
+                    scope=scope,
+                    ip=identity,
+                    path=request.path
+                )
+
+                resp = jsonify({
+                    "success": False,
+                    "error": "Too many requests. Please wait."
+                })
                 resp.status_code = 429
+
                 if retry_after:
                     resp.headers["Retry-After"] = str(retry_after)
+
                 return resp
-            
+
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
+
 def ai_rate_limit(f):
-    """Decorator for AI-expensive endpoints (TASK 3)."""
+    """Rate limit expensive AI endpoints per authenticated user and IP."""
+
     @wraps(f)
     def wrapper(*args, **kwargs):
         user_ip = request.remote_addr or "unknown"
+
         user_id = "unknown"
+
         try:
             user = g.get("supabase_user")
             if user and user.get("uid"):
                 user_id = str(user["uid"])
-        except RuntimeError:
+        except (RuntimeError, AttributeError):
             pass
-        
+
         now = time.time()
-        
+
+        # 1. Per-user AI rate limit
         user_key = f"ai_user:{user_id}"
+
         with ai_rate_lock:
-            ai_rate_data_user[user_key] = [t for t in ai_rate_data_user[user_key] if now - t < AI_USER_WINDOW_SECONDS]
-            if len(ai_rate_data_user[user_key]) >= AI_USER_REQUEST_LIMIT:
-                _log_security_event("ai_rate_limit_user", user=user_id[:16], path=request.path)
-                resp = jsonify({"success": False, "error": "AI request limit reached. Please wait before trying again."})
+            user_times = ai_rate_data_user[user_key]
+
+            user_times[:] = [
+                t for t in user_times
+                if now - t < AI_USER_WINDOW_SECONDS
+            ]
+
+            if len(user_times) >= AI_USER_REQUEST_LIMIT:
+                retry_after = max(
+                    1,
+                    int(
+                        AI_USER_WINDOW_SECONDS
+                        - (now - user_times[0])
+                    )
+                )
+
+                _log_security_event(
+                    "ai_rate_limit_user",
+                    user=user_id[:16],
+                    path=request.path
+                )
+
+                resp = jsonify({
+                    "success": False,
+                    "error": "AI request limit reached. Please wait before trying again."
+                })
                 resp.status_code = 429
-                resp.headers["Retry-After"] = str(AI_USER_WINDOW_SECONDS)
+                resp.headers["Retry-After"] = str(retry_after)
                 return resp
-        
+
+        # 2. Per-IP AI rate limit
         ip_key = f"ai_ip:{user_ip}"
+
         with ai_rate_lock:
-            ai_rate_data_ip[ip_key] = [t for t in ai_rate_data_ip[ip_key] if now - t < AI_IP_WINDOW_SECONDS]
-            if len(ai_rate_data_ip[ip_key]) >= AI_IP_REQUEST_LIMIT:
-                _log_security_event("ai_rate_limit_ip", ip=user_ip, path=request.path)
-                resp = jsonify({"success": False, "error": "Too many requests from this location."})
+            ip_times = ai_rate_data_ip[ip_key]
+
+            ip_times[:] = [
+                t for t in ip_times
+                if now - t < AI_IP_WINDOW_SECONDS
+            ]
+
+            if len(ip_times) >= AI_IP_REQUEST_LIMIT:
+                retry_after = max(
+                    1,
+                    int(
+                        AI_IP_WINDOW_SECONDS
+                        - (now - ip_times[0])
+                    )
+                )
+
+                _log_security_event(
+                    "ai_rate_limit_ip",
+                    ip=user_ip,
+                    path=request.path
+                )
+
+                resp = jsonify({
+                    "success": False,
+                    "error": "Too many AI requests. Please wait before trying again."
+                })
                 resp.status_code = 429
-                resp.headers["Retry-After"] = str(AI_IP_WINDOW_SECONDS)
+                resp.headers["Retry-After"] = str(retry_after)
                 return resp
-        
+
+        # 3. Record request
         with ai_rate_lock:
             ai_rate_data_user[user_key].append(now)
             ai_rate_data_ip[ip_key].append(now)
-        
-        return f(*args, **kwargs)
-    return wrapper
 
+        return f(*args, **kwargs)
+
+    return wrapper
 # ==========================================
 # SUPABASE (AUTH + DATABASE PERSISTENCE)
 # ==========================================
@@ -834,27 +999,68 @@ else:
 # SUPABASE AUTHENTICATION DECORATOR
 # ==========================================
 def require_auth(f):
-    """Auth with Supabase if available, otherwise auto local user."""
     @wraps(f)
-    def wrapper(*args, **kwargs):
-        # Try Supabase first
+    def decorated(*args, **kwargs):
         auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer ") and supabase_client:
-            token = auth_header[7:].strip()
-            if token and len(token) <= 4096:
-                try:
-                    user = supabase_client.verify_user_token(token)
-                    if user:
-                        g.supabase_user = user
-                        g.is_local_user = False
-                        return f(*args, **kwargs)
-                except SupabaseUnavailableError:
-                    pass
-        # FALLBACK: Local user — yahi fix hai, ab 503 nahi aayega
-        g.supabase_user = {"uid": "local-user-" + hashlib.sha256(SECRET_KEY.encode()).hexdigest()[:12], "email": "local@applyx.app"}
-        g.is_local_user = True
-        return f(*args, **kwargs)
-    return wrapper
+
+        # Authorization header required
+        if not auth_header.startswith("Bearer "):
+            return jsonify({
+                "success": False,
+                "error": "Authentication required"
+            }), 401
+
+        token = auth_header[7:].strip()
+
+        # Empty token
+        if not token:
+            return jsonify({
+                "success": False,
+                "error": "Authentication required"
+            }), 401
+
+        # Never log or expose the token
+        try:
+            # Supabase client must be available
+            if not supabase_client:
+                logger.error(
+                    "Authentication service unavailable"
+                )
+                return jsonify({
+                    "success": False,
+                    "error": "Authentication service unavailable"
+                }), 503
+
+            # Verify the Supabase access token
+            user = supabase_client.verify_user_token(token)
+
+            # Token verification failed
+            if not user:
+                return jsonify({
+                    "success": False,
+                    "error": "Invalid or expired session"
+                }), 401
+
+            # Store only verified user information
+            request.current_user = user
+            g.supabase_user = user
+
+            return f(*args, **kwargs)
+
+        except Exception as e:
+            # Detailed error stays in server logs only.
+            # NEVER return exception details to the client.
+            logger.warning(
+                "Authentication verification failed: %s",
+                type(e).__name__
+            )
+
+            return jsonify({
+                "success": False,
+                "error": "Invalid or expired session"
+            }), 401
+
+    return decorated
 
 # ==========================================
 # IN-MEMORY STATE CACHE (TASK 1)
@@ -889,11 +1095,13 @@ VALID_JOB_STATUSES = {"saved", "preparing", "applied", "follow-up", "interview",
 VALID_ACTION_TYPES = {"followup", "interview_prep", "resume", "review", "prepare", "apply", "custom"}
 EDITABLE_JOB_FIELDS = {"role", "company", "status", "location", "salary", "notes", "jd", "url",
                        "deadline", "applied_at", "follow_up_due", "job_title"}
-BLOCKED_INJECTION_FIELDS = {"user_id", "owner_id", "uid", "created_by", "admin", "role", 
+                       
+BLOCKED_INJECTION_FIELDS = {"user_id", "owner_id", "uid", "created_by", "admin",
                             "is_admin", "permissions", "tier", "prime", "xp", "total_xp",
-                            "level", "achievements", "analysis", "priority_score", "priority_level",
-                            "next_action", "next_action_data", "fit_score", "match_score"}
-
+                            "level", "achievements", "analysis", "priority_score",
+                            "priority_level", "next_action", "next_action_data",
+                            "fit_score", "match_score"}
+                            
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 def _get_json_dict():
@@ -1345,22 +1553,58 @@ def _get_user_state(user_id="guest"):
 def _today_str(): return date.today().isoformat()
 
 def _get_user_id(data=None):
-    """SECURITY: Identity comes ONLY from verified Supabase token."""
-    user = g.get("supabase_user", None)
-    if user and user.get("uid"):
-        uid = str(user["uid"])
-        if isinstance(data, dict):
-            client_id = str(data.get("user_id") or "")
-            if client_id and client_id != uid:
-                _log_security_event("client_user_id_mismatch", path=request.path, client_id=client_id[:16])
-        try:
-            query_id = request.args.get("user_id", "")
-            if query_id and query_id != uid:
-                _log_security_event("client_user_id_mismatch", path=request.path, client_id=query_id[:16])
-        except RuntimeError:
-            pass
-        return uid
-    return "guest"
+    """ Return ONLY the user ID obtained from the verified Supabase token.
+
+    Security rules:
+    - Never trust user_id supplied by the client.
+    - Reject requests when client-supplied user_id conflicts
+      with the authenticated user's ID.
+    - Never fall back to a shared "guest" identity for protected APIs.
+    """
+    user = g.get("supabase_user")
+
+    if not isinstance(user, dict):
+        raise PermissionError("Authentication required.")
+
+    uid = str(user.get("uid") or "").strip()
+
+    if not uid or not _is_valid_uuid(uid):
+        raise PermissionError("Invalid authenticated user.")
+
+    # ------------------------------------------------------
+    # Check JSON/body user_id
+    # ------------------------------------------------------
+    if isinstance(data, dict):
+        client_id = str(data.get("user_id") or "").strip()
+
+        if client_id and client_id != uid:
+            _log_security_event(
+                "client_user_id_mismatch",
+                path=request.path,
+                authenticated_user=uid[:16],
+                client_user_id=client_id[:16]
+            )
+            raise PermissionError("User identity mismatch.")
+
+    # ------------------------------------------------------
+    # Check query-string user_id
+    # ------------------------------------------------------
+    try:
+        query_id = str(request.args.get("user_id") or "").strip()
+
+        if query_id and query_id != uid:
+            _log_security_event(
+                "client_user_id_mismatch",
+                path=request.path,
+                authenticated_user=uid[:16],
+                client_user_id=query_id[:16]
+            )
+            raise PermissionError("User identity mismatch.")
+    except RuntimeError:
+        # request context unavailable
+        pass
+
+    return uid
 
 def _clean_ai_text(text):
     if not text: return ""
@@ -1609,57 +1853,115 @@ def sync_state(user_id="guest"):
 def setup_profile():
     try:
         data = _get_json_dict()
+
         if _check_injection_fields(data, "/api/setup-profile"):
             return _validation_error("Invalid request fields.")
+
         user_id = _get_user_id(data)
         state = _get_user_state(user_id)
+
         raw_name = data.get("name")
         raw_skills = data.get("skills")
         raw_target = data.get("target_job")
-        if not all(isinstance(x, str) and x.strip() for x in (raw_name, raw_skills, raw_target)):
-            return jsonify({"success": False, "error": "Please fill Name, Skills, and Target Job."}), 400
+
+        if not all(
+            isinstance(x, str) and x.strip()
+            for x in (raw_name, raw_skills, raw_target)
+        ):
+            return jsonify({
+                "success": False,
+                "error": "Please fill Name, Skills, and Target Job."
+            }), 400
+
         name = _sanitize_text(raw_name)
         skills = _sanitize_text(raw_skills)
         target_job = _sanitize_text(raw_target)
-        if len(name) > 100 or len(skills) > MAX_PROFILE_SKILLS_CHARS or len(target_job) > 200:
-            return _validation_error("One or more profile fields exceed the maximum allowed length.")
-        state["profile"] = {"name": name, "skills": skills, "target_job": target_job}
+
+        if (
+            len(name) > 100
+            or len(skills) > MAX_PROFILE_SKILLS_CHARS
+            or len(target_job) > 200
+        ):
+            return _validation_error(
+                "One or more profile fields exceed the maximum allowed length."
+            )
+
+        state["profile"] = {
+            "name": name,
+            "skills": skills,
+            "target_job": target_job
+        }
+
         if state.get("total_xp", 0) == 0:
             award_xp(state, 20, "first_resume")
             unlock_badge(state, "first_resume", "First Step")
-        twin_message = "AI Twin is currently initializing. Please check the dashboard."
+
+        twin_message = (
+            "AI Twin is currently initializing. "
+            "Please check the dashboard."
+        )
+
         state["twin_status"] = "initializing"
         state["twin_message"] = twin_message
+
         sync_state(user_id)
+
         try:
             prompt = f"""You are an 'AI Career Twin'. The user has just set up their profile.
 User Data: Target Job is {target_job}. Current Skills: {skills}.
 Write a 2-sentence conversational message in professional English like a supportive friend.
 Tell them where they are, what they might be missing, and what to do today to improve their job hunt.
-CRITICAL RULE: Respond ONLY in professional English. Never use Hindi, Hinglish, Urdu, Arabic, Devanagari, or any other non-English script. Return only the requested JSON when JSON is required.
+CRITICAL RULE: Respond ONLY in professional English. Never use Hindi, Hinglish, Urdu, Arabic, Devanagari, or any other non-English script.
 Return ONLY valid JSON: {{"message": "your english message here"}}"""
-            raw = generate_ai_response(prompt, validate_func=validate_twin_status, task="career_twin")
+
+            raw = generate_ai_response(
+                prompt,
+                validate_func=validate_twin_status,
+                task="career_twin"
+            )
+
             twin_data = _safe_json_loads(raw, None)
+
             if twin_data and "message" in twin_data:
                 twin_message = twin_data["message"]
                 state["twin_message"] = twin_message
                 state["twin_status"] = "ready"
                 sync_state(user_id)
+
         except Exception as twin_err:
-            logger.error(f"Error generating twin during setup: {type(twin_err).__name__}")
+            logger.error(
+                f"Error generating twin during setup: "
+                f"{type(twin_err).__name__}"
+            )
+
             state["twin_status"] = "failed"
-            state["twin_message"] = "AI Twin is currently offline. Please continue with your applications."
+            state["twin_message"] = (
+                "AI Twin is currently offline. "
+                "Please continue with your applications."
+            )
+
             sync_state(user_id)
-        return jsonify({"success": True, "message": "Profile setup complete.", "twin_message": state["twin_message"], "user_id": user_id})
+
+        return jsonify({
+            "success": True,
+            "message": "Profile setup complete.",
+            "twin_message": state["twin_message"],
+            "user_id": user_id
+        })
+
     except SupabaseUnavailableError:
-        return jsonify({"success": False, "error": "Service temporarily unavailable. Please try again."}), 503
+        return jsonify({
+            "success": False,
+            "error": "Service temporarily unavailable. Please try again."
+        }), 503
+
     except Exception as e:
         return friendly_error_response(str(e))
 
 @app.route("/get-daily-mission", methods=["POST"])
 @rate_limit(limit=20, window=60, scope="daily_mission")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def get_daily_mission():
     try:
         data = _get_json_dict()
@@ -1703,8 +2005,8 @@ Return ONLY valid JSON without markdown or extra text."""
 
 @app.route("/api/get-twin-status", methods=["POST"])
 @rate_limit(limit=20, window=60, scope="twin_status")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def get_twin_status():
     try:
         data = _get_json_dict()
@@ -1737,8 +2039,8 @@ Return ONLY valid JSON: {{"message": "your english message here"}}"""
 
 @app.route("/api/todays-action", methods=["POST"])
 @rate_limit(limit=20, window=60, scope="todays_action")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def api_todays_action():
     try:
         data = _get_json_dict()
@@ -2092,8 +2394,8 @@ def delete_job():
 
 @app.route("/api/analyze-job", methods=["POST"])
 @rate_limit(limit=15, window=60, scope="analyze_job")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def analyze_job():
     try:
         data = _get_json_dict()
@@ -2183,8 +2485,8 @@ Return ONLY valid JSON without markdown or extra text."""
 
 @app.route("/api/generate-followup", methods=["POST"])
 @rate_limit(limit=15, window=60, scope="generate_followup")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def generate_followup():
     try:
         data = _get_json_dict()
@@ -2233,8 +2535,8 @@ Return ONLY valid JSON without markdown or extra text."""
 
 @app.route("/api/interview-prep", methods=["POST"])
 @rate_limit(limit=10, window=60, scope="interview_prep")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def interview_prep_route():
     try:
         data = _get_json_dict()
@@ -2383,8 +2685,8 @@ def skip_learning_topic():
 
 @app.route("/api/pattern-insight", methods=["POST"])
 @rate_limit(limit=15, window=60, scope="pattern_insight")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def pattern_insight():
     try:
         data = _get_json_dict()
@@ -2921,8 +3223,8 @@ RETURN ONLY THE FINAL VALID JSON.
 
 @app.route("/api/challenge/start", methods=["POST"])
 @rate_limit(limit=5, window=60, scope="challenge_start")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def challenge_start():
     try:
         data = _get_json_dict()
@@ -3353,8 +3655,8 @@ def challenge_levels():
         }), 500
 @app.route("/api/challenge/level/<int:day>", methods=["GET"])
 @rate_limit(limit=30, window=60, scope="challenge_level_detail")
-@ai_rate_limit
 @require_auth
+@ai_rate_limit
 def challenge_level_detail(day):
 
     try:
@@ -5203,6 +5505,22 @@ def too_many_requests(e):
 def internal_server_error(e):
     logger.error(f"Internal Server Error: {type(e).__name__}")
     return jsonify({"success": False, "error": "Internal server error. Please try again."}), 500
+    
+    
+@app.errorhandler(PermissionError)
+def handle_permission_error(error):
+    message = str(error)
+
+    if message == "Authentication required.":
+        return jsonify({
+            "success": False,
+            "error": "Authentication required"
+        }), 401
+
+    return jsonify({
+        "success": False,
+        "error": "Forbidden"
+    }), 403
 
 
 if __name__ == "__main__":
@@ -5213,7 +5531,5 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000,
-        debug=False,
-        threaded=True,
-        use_reloader=False
+        debug=False
     )
