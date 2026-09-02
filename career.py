@@ -1659,18 +1659,61 @@ def is_english(text):
     return True
 
 def validate_job_analysis(analysis):
-    if not isinstance(analysis, dict): return False
-    if not isinstance(analysis.get("match_score"), (int, float)): return False
-    required_keys = ["match_level", "matching_skills", "missing_skills", "resume_improvements", "strengths", "weaknesses", "interview_topics", "next_action", "summary"]
-    if not all(key in analysis for key in required_keys): return False
-    if not is_english(analysis.get("match_level", "")): return False
-    if not is_english(analysis.get("next_action", "")): return False
-    if not is_english(analysis.get("summary", "")): return False
-    for k in ["matching_skills", "missing_skills", "resume_improvements", "strengths", "weaknesses", "interview_topics"]:
+    if not isinstance(analysis, dict):
+        return False
+
+    if not isinstance(analysis.get("match_score"), (int, float)):
+        return False
+
+    required_keys = [
+        "match_level",
+        "matching_skills",
+        "missing_skills",
+        "strengths",
+        "weaknesses",
+        "interview_topics",
+        "next_action",
+        "summary",
+        "should_apply",
+        "should_apply_reason"
+    ]
+
+    if not all(key in analysis for key in required_keys):
+        return False
+
+    if not is_english(analysis.get("match_level", "")):
+        return False
+
+    if not is_english(analysis.get("next_action", "")):
+        return False
+
+    if not is_english(analysis.get("summary", "")):
+        return False
+
+    if analysis.get("should_apply") not in ["YES", "MAYBE", "NO"]:
+        return False
+
+    if not is_english(analysis.get("should_apply_reason", "")):
+        return False
+
+    for k in [
+        "matching_skills",
+        "missing_skills",
+        "strengths",
+        "weaknesses",
+        "interview_topics"
+    ]:
         arr = analysis.get(k, [])
-        if not isinstance(arr, list): return False
-        if len(arr) > MAX_ARRAY_LENGTH: return False
-        if not all(is_english(x) for x in arr): return False
+
+        if not isinstance(arr, list):
+            return False
+
+        if len(arr) > MAX_ARRAY_LENGTH:
+            return False
+
+        if not all(is_english(x) for x in arr):
+            return False
+
     return True
 
 def validate_twin_status(data):
@@ -2256,42 +2299,138 @@ def get_jobs():
 def add_job():
     try:
         data = _get_json_dict()
+
         if _check_injection_fields(data, "/api/add-job"):
             return _validation_error("Invalid request fields.")
+
         user_id = _get_user_id(data)
         state = _get_user_state(user_id)
-        role, err = _validate_string(data.get("role"), "Role", 200, required=True)
-        if err: return _validation_error(err)
-        company, err = _validate_string(data.get("company"), "Company", 200, required=True)
-        if err: return _validation_error(err)
+
+        role, err = _validate_string(
+            data.get("role"),
+            "Role",
+            200,
+            required=True
+        )
+        if err:
+            return _validation_error(err)
+
+        company, err = _validate_string(
+            data.get("company"),
+            "Company",
+            200,
+            required=True
+        )
+        if err:
+            return _validation_error(err)
+
         status = data.get("status", "saved")
         if status not in VALID_JOB_STATUSES:
             return _validation_error("Invalid status value.")
-        location, err = _validate_string(data.get("location"), "Location", 200)
-        if err: return _validation_error(err)
-        salary, err = _validate_string(data.get("salary"), "Salary", 100)
-        if err: return _validation_error(err)
-        notes, err = _validate_string(data.get("notes"), "Notes", 5000)
-        if err: return _validation_error(err)
-        jd, err = _validate_string(data.get("jd"), "Job description", MAX_JOB_DESCRIPTION_CHARS)
-        if err: return _validation_error(err)
-        url, err = _validate_optional_url(data.get("url"), "URL")
-        if err: return _validation_error(err)
-        deadline, err = _validate_iso_date(data.get("deadline"), "Deadline")
-        if err: return _validation_error(err)
-        applied_at, err = _validate_iso_datetime(data.get("applied_at"), "Applied at")
-        if err: return _validation_error(err)
-        job = {"id": str(uuid.uuid4()), "role": role, "company": company, "status": status, "location": location, "salary": salary, "notes": notes, "jd": jd, "url": url, "job_title": role, "target_role": state.get("profile", {}).get("target_job", ""), "created_at": datetime.now().isoformat(timespec="seconds"), "updated_at": datetime.now().isoformat(timespec="seconds"), "applied_at": applied_at, "deadline": deadline, "timeline": [], "follow_up_due": False, "fit_score": 0, "match_score": 0, "analysis": None, "priority_score": 40, "priority_level": "LOW", "next_action_data": get_next_action({"status": "saved"}), "next_action": "Prepare application: Review job requirements and prepare your application."}
+
+        location, err = _validate_string(
+            data.get("location"),
+            "Location",
+            200
+        )
+        if err:
+            return _validation_error(err)
+
+        salary, err = _validate_string(
+            data.get("salary"),
+            "Salary",
+            100
+        )
+        if err:
+            return _validation_error(err)
+
+        notes, err = _validate_string(
+            data.get("notes"),
+            "Notes",
+            5000
+        )
+        if err:
+            return _validation_error(err)
+
+        jd, err = _validate_string(
+            data.get("jd"),
+            "Job description",
+            MAX_JOB_DESCRIPTION_CHARS
+        )
+        if err:
+            return _validation_error(err)
+
+        url, err = _validate_optional_url(
+            data.get("url"),
+            "URL"
+        )
+        if err:
+            return _validation_error(err)
+
+        deadline, err = _validate_iso_date(
+            data.get("deadline"),
+            "Deadline"
+        )
+        if err:
+            return _validation_error(err)
+
+        applied_at, err = _validate_iso_datetime(
+            data.get("applied_at"),
+            "Applied at"
+        )
+        if err:
+            return _validation_error(err)
+
+        job = {
+            "id": str(uuid.uuid4()),
+            "role": role,
+            "company": company,
+            "status": status,
+            "location": location,
+            "salary": salary,
+            "notes": notes,
+            "jd": jd,
+            "url": url,
+            "job_title": role,
+            "target_role": state.get("profile", {}).get("target_job", ""),
+            "created_at": datetime.now().isoformat(timespec="seconds"),
+            "updated_at": datetime.now().isoformat(timespec="seconds"),
+            "applied_at": applied_at,
+            "deadline": deadline,
+            "timeline": [],
+            "follow_up_due": False,
+            "fit_score": 0,
+            "match_score": 0,
+            "analysis": None,
+            "priority_score": 40,
+            "priority_level": "LOW",
+            "next_action_data": get_next_action({"status": "saved"}),
+            "next_action": "Prepare application: Review job requirements and prepare your application."
+        }
+
         state["jobs"].append(job)
-        with _get_xp_lock(user_id):
-            award_xp(state, 10, "add_job")
+
+        # Add Job does NOT award XP.
         sync_state(user_id)
-        return jsonify({"success": True, "job": job, "message": "Job added successfully."})
+
+        return jsonify({
+            "success": True,
+            "job": job,
+            "message": "Job added successfully."
+        })
+
     except SupabaseUnavailableError:
-        return jsonify({"success": False, "error": "Service temporarily unavailable. Please try again."}), 503
+        return jsonify({
+            "success": False,
+            "error": "Service temporarily unavailable. Please try again."
+        }), 503
+
     except Exception as e:
         logger.error(f"Add Job Error: {type(e).__name__}")
-        return jsonify({"success": False, "error": "Failed to add job."}), 500
+        return jsonify({
+            "success": False,
+            "error": "Failed to add job."
+        }), 500
 
 @app.route("/api/update-job", methods=["PUT", "PATCH"])
 @rate_limit(limit=60, window=60, scope="update_job")
@@ -2392,6 +2531,10 @@ def delete_job():
         logger.error(f"Delete Job Error: {type(e).__name__}")
         return jsonify({"success": False, "error": "Failed to delete job."}), 500
 
+# ============================================================
+# ANALYZE JOB
+# ============================================================
+
 @app.route("/api/analyze-job", methods=["POST"])
 @rate_limit(limit=15, window=60, scope="analyze_job")
 @require_auth
@@ -2399,89 +2542,264 @@ def delete_job():
 def analyze_job():
     try:
         data = _get_json_dict()
-        if _check_injection_fields(data, "/api/analyze-job"):
-            return _validation_error("Invalid request fields.")
+
+        if _check_injection_fields(
+            data,
+            "/api/analyze-job"
+        ):
+            return _validation_error(
+                "Invalid request fields."
+            )
+
         user_id = _get_user_id(data)
         state = _get_user_state(user_id)
-        job_id, err = _validate_string(data.get("job_id"), "Job ID", 64, required=True)
-        if err: return _validation_error(err)
+
+        job_id, err = _validate_string(
+            data.get("job_id"),
+            "Job ID",
+            64,
+            required=True
+        )
+
+        if err:
+            return _validation_error(err)
+
         jobs = state.get("jobs", [])
         target_job = None
+
         for job in jobs:
-            if job.get("id") == job_id: target_job = job; break
-        if not target_job: return jsonify({"success": False, "error": "Job not found."}), 404
-        skills = state.get("profile", {}).get("skills", "")
-        target_role = state.get("profile", {}).get("target_job", "")
+            if job.get("id") == job_id:
+                target_job = job
+                break
+
+        if not target_job:
+            return jsonify({
+                "success": False,
+                "error": "Job not found."
+            }), 404
+
+        skills = state.get(
+            "profile",
+            {}
+        ).get("skills", "")
+
+        target_role = state.get(
+            "profile",
+            {}
+        ).get("target_job", "")
+
         jd = target_job.get("jd", "")
         role = target_job.get("role", "")
         company = target_job.get("company", "")
+
         with analyze_lock:
             job_key = f"{user_id}_{job_id}"
-            if job_key in analyzing_jobs: return jsonify({"success": False, "error": "This job is already being analyzed. Please wait."}), 429
+
+            if job_key in analyzing_jobs:
+                return jsonify({
+                    "success": False,
+                    "error": (
+                        "This job is already being "
+                        "analyzed. Please wait."
+                    )
+                }), 429
+
             analyzing_jobs.add(job_key)
+
         try:
             jd_length = len(jd) if jd else 0
+
             data_quality_warning = None
+
             if jd_length < 50:
-                data_quality_warning = "Very limited job description provided. Analysis is based on minimal information and may not be accurate."
+                data_quality_warning = (
+                    "Very limited job description provided. "
+                    "Analysis may be less accurate."
+                )
+
             elif jd_length < 200:
-                data_quality_warning = "Limited job description. Some analysis may be based on assumptions rather than stated requirements."
-            prompt = f"""You are an expert career advisor and ATS analyzer.
-User Skills: {skills}
-Target Role: {target_role}
+                data_quality_warning = (
+                    "Limited job description provided. "
+                    "Some analysis fields may be limited."
+                )
+
+            prompt = f"""
+You are an expert career advisor and job-match analyst.
+
+CANDIDATE PROFILE
+Name: {state.get("profile", {}).get("name", "Candidate")}
+Current Skills: {skills}
+Target Job Role: {target_role}
+
+JOB INFORMATION
 Job Title: {role}
 Company: {company}
-Job Description: {jd[:3000]}
-Analyze this job match and return STRICT JSON with these keys:
-- "match_score": number 0-100
-- "match_level": "Excellent" / "Good" / "Fair" / "Poor"
-- "matching_skills": array of strings
-- "missing_skills": array of strings
-- "job_required_skills": array of ALL required skills from JD
-- "resume_improvements": array of 3-5 specific suggestions
-- "strengths": array of 3-5 strengths
-- "weaknesses": array of 3-5 weaknesses
-- "interview_topics": array of 3-5 likely interview topics
-- "next_action": one specific next step
-- "summary": 2-sentence summary
+Job Description:
+{jd[:3000]}
+
+Analyze the candidate against the provided Job Description.
+
+Return ONLY valid JSON.
+
+REQUIRED JSON STRUCTURE:
+
+{{
+  "match_score": 0,
+  "match_level": "Excellent",
+  "matching_skills": [],
+  "missing_skills": [],
+  "job_required_skills": [],
+  "strengths": [],
+  "weaknesses": [],
+  "interview_topics": [],
+  "should_apply": "YES",
+  "should_apply_reason": "",
+  "next_action": "",
+  "summary": ""
+}}
+
+RULES:
+
+- "match_score" must be a number from 0 to 100.
+- "match_level" must be exactly one of:
+  "Excellent", "Good", "Fair", "Poor"
+- "matching_skills" must contain skills supported by the candidate profile and the JD.
+- "missing_skills" must contain only skills required by the JD that are not present in the candidate profile.
+- "job_required_skills" must contain ALL skills explicitly stated or directly implied by the JD.
+- "strengths" must contain 3 to 5 evidence-based strengths.
+- "weaknesses" must contain 3 to 5 evidence-based weaknesses or gaps.
+- "interview_topics" must contain 3 to 5 likely topics based only on the JD.
+- "should_apply" must be exactly "YES", "MAYBE", or "NO".
+- "should_apply_reason" must be concise and evidence-based.
+- "next_action" must contain one specific next step.
+- "summary" must contain exactly 2 sentences.
+
 DATA ACCURACY RULES:
-- Only use information explicitly provided in the Job Description above.
-- Do NOT invent salary, location, or requirements not stated in the JD.
-- If information is missing, use "Not specified" instead of guessing.
-- All skills in "job_required_skills" must actually appear in or be directly implied by the JD.
-CRITICAL RULE: Respond ONLY in professional English. Never use Hindi, Hinglish, Urdu, Arabic, Devanagari, or any other non-English script. Return only the requested JSON when JSON is required.
-Return ONLY valid JSON without markdown or extra text."""
-            raw = generate_ai_response(prompt, validate_func=validate_job_analysis, task="job_analysis")
-            analysis = _safe_json_loads(raw, None)
-            if not analysis: return jsonify({"success": False, "error": "AI analysis failed. Please try again."}), 503
-            analysis = _post_process_analysis(analysis, skills, jd)
-            analysis["data_quality"] = {
-                "jd_length": jd_length,
-                "jd_provided": jd_length > 20,
-                "warning": data_quality_warning
-            }
+
+- Only use information explicitly provided in the Job Description and candidate profile above.
+- Do NOT invent salary, location, company details, requirements, benefits, experience, education, certifications, or qualifications.
+- If information is missing, use "Not specified".
+- Do NOT include resume improvements.
+- Do NOT mention resume updates.
+- Do NOT invent requirements that are not present in the JD.
+- Every item in "job_required_skills" must actually appear in or be directly implied by the JD.
+- "YES" means the candidate appears reasonably qualified based on available information.
+- "MAYBE" means there is a reasonable match but important information is missing or there are notable gaps.
+- "NO" means the candidate clearly lacks important required qualifications stated in the JD.
+
+CRITICAL OUTPUT RULE:
+Return ONLY valid JSON.
+Do not use markdown.
+Do not include explanations outside the JSON.
+Respond only in professional English.
+"""
+
+            raw = generate_ai_response(
+                prompt,
+                validate_func=validate_job_analysis,
+                task="job_analysis"
+            )
+
+            analysis = _safe_json_loads(
+                raw,
+                None
+            )
+
+            if not analysis:
+                return jsonify({
+                    "success": False,
+                    "error": (
+                        "AI analysis failed. "
+                        "Please try again."
+                    )
+                }), 503
+
+            # Keep only safe analysis values expected
+            # by the current application.
             target_job["analysis"] = analysis
-            target_job["fit_score"] = analysis.get("match_score", 0)
-            target_job["match_score"] = analysis.get("match_score", 0)
-            target_job["updated_at"] = datetime.now().isoformat(timespec="seconds")
-            priority = _calculate_priority(target_job)
-            target_job["priority_score"] = priority["priority_score"]
-            target_job["priority_level"] = priority["priority_level"]
-            na = get_next_action(target_job)
+
+            match_score = analysis.get(
+                "match_score",
+                0
+            )
+
+            try:
+                match_score = float(match_score)
+            except (TypeError, ValueError):
+                match_score = 0
+
+            match_score = max(
+                0,
+                min(100, match_score)
+            )
+
+            if match_score.is_integer():
+                match_score = int(match_score)
+
+            target_job["fit_score"] = match_score
+            target_job["match_score"] = match_score
+
+            target_job["updated_at"] = (
+                datetime.now().isoformat(
+                    timespec="seconds"
+                )
+            )
+
+            priority = _calculate_priority(
+                target_job
+            )
+
+            target_job["priority_score"] = (
+                priority["priority_score"]
+            )
+
+            target_job["priority_level"] = (
+                priority["priority_level"]
+            )
+
+            na = get_next_action(
+                target_job
+            )
+
             target_job["next_action_data"] = na
-            target_job["next_action"] = na["text"]
-            with _get_xp_lock(user_id):
-                award_xp(state, 25, "analyze_job")
+            target_job["next_action"] = (
+                na["text"]
+            )
+
+            # Save analysis result.
             sync_state(user_id)
-            return jsonify({"success": True, "analysis": analysis, "job_id": job_id})
+
+            return jsonify({
+                "success": True,
+                "analysis": analysis,
+                "job_id": job_id
+            })
+
         finally:
             with analyze_lock:
-                analyzing_jobs.discard(job_key)
+                analyzing_jobs.discard(
+                    job_key
+                )
+
     except SupabaseUnavailableError:
-        return jsonify({"success": False, "error": "Service temporarily unavailable. Please try again."}), 503
+        return jsonify({
+            "success": False,
+            "error": (
+                "Service temporarily unavailable. "
+                "Please try again."
+            )
+        }), 503
+
     except Exception as e:
-        logger.error(f"Analyze Job Error: {type(e).__name__}")
-        return friendly_error_response(str(e))
+        logger.error(
+            f"Analyze Job Error: {type(e).__name__}"
+        )
+
+        return friendly_error_response(
+            str(e)
+        )
+
+
 
 @app.route("/api/generate-followup", methods=["POST"])
 @rate_limit(limit=15, window=60, scope="generate_followup")
