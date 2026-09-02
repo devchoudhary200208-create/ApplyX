@@ -2224,6 +2224,147 @@ function clearCache(prefix) {
     } catch (e) { /* ignore */ }
 }
 
+
+// =========================================================
+// PWA INSTALL
+// =========================================================
+
+window.addEventListener(
+    'beforeinstallprompt',
+    function (event) {
+
+        // Prevent Chrome from showing its automatic prompt
+        event.preventDefault();
+
+        // Save the install prompt for the button
+        deferredPrompt = event;
+
+        console.log(
+            '[PWA] Install prompt is available.'
+        );
+    }
+);
+
+
+window.addEventListener(
+    'appinstalled',
+    function () {
+
+        deferredPrompt = null;
+
+        console.log(
+            '[PWA] App installed successfully.'
+        );
+
+        if (
+            typeof showToast === 'function'
+        ) {
+            showToast(
+                'Apply.X installed successfully!',
+                'success'
+            );
+        }
+    }
+);
+
+
+async function triggerPwaInstall(btn) {
+
+    try {
+
+        // Already installed / running as standalone
+        if (
+            window.matchMedia &&
+            window.matchMedia(
+                '(display-mode: standalone)'
+            ).matches
+        ) {
+
+            showToast(
+                'Apply.X is already installed.',
+                'success'
+            );
+
+            return;
+        }
+
+
+        // Android/iOS browser may not expose
+        // the install prompt immediately.
+        if (!deferredPrompt) {
+
+            showToast(
+                'Install option is not available yet. Open the browser menu and choose "Add to Home screen".',
+                'warning'
+            );
+
+            return;
+        }
+
+
+        if (btn) {
+            setBtnLoading(btn, true);
+        }
+
+
+        // Show native browser install prompt
+        await deferredPrompt.prompt();
+
+
+        var choice =
+            await deferredPrompt.userChoice;
+
+
+        if (
+            choice &&
+            choice.outcome === 'accepted'
+        ) {
+
+            showToast(
+                'Installing Apply.X...',
+                'success'
+            );
+
+        } else {
+
+            showToast(
+                'Installation cancelled.',
+                'warning'
+            );
+        }
+
+
+        // Prompt can only be used once
+        deferredPrompt = null;
+
+
+    } catch (e) {
+
+        console.error(
+            '[PWA] Install failed:',
+            e
+        );
+
+        showToast(
+            'Could not open the install prompt. Please use the browser menu and choose "Add to Home screen".',
+            'warning'
+        );
+
+
+    } finally {
+
+        if (btn) {
+
+            if (
+                typeof setBtnLoading ===
+                'function'
+            ) {
+                setBtnLoading(btn, false);
+            }
+        }
+    }
+}
+
 // ==========================================
 // SECURITY: URL VALIDATION (TASK 4)
 // ==========================================
@@ -3613,311 +3754,770 @@ function loadChallengeDashCard() {
 
 async function startChallengeFromDash(btn) {
     if (_challengeStartInFlight) return;
+
     _challengeStartInFlight = true;
+
     setBtnLoading(btn, true);
+
     try {
-        var result = await apiCall('/api/challenge/start', { method: 'POST', body: {} });
+        var result = await apiCall(
+            '/api/challenge/start',
+            {
+                method: 'POST',
+                body: {}
+            }
+        );
+
         if (result.success) {
-            showToast(result.message || 'Challenge started!', 'success');
+
+            showToast(
+                result.message || 'Challenge started!',
+                'success'
+            );
+
             celebrate();
+
             if (result.challenge) {
                 if (appState) {
-                    appState.challenge = result.challenge;
+                    appState.challenge =
+                        result.challenge;
                 } else {
-                    appState = { challenge: result.challenge };
+                    appState = {
+                        challenge: result.challenge
+                    };
                 }
             }
+
             await loadAppState();
+
             navigateTo('learn');
+
         } else {
-            showToast(result.error || 'Failed to start challenge', 'error');
-            setBtnLoading(btn, false);
+
+            showToast(
+                result.error ||
+                'Failed to start challenge',
+                'error'
+            );
+
+            setBtnLoading(
+                btn,
+                false
+            );
         }
+
     } catch (e) {
-        showToast(e.message || 'Failed to start challenge', 'error');
-        setBtnLoading(btn, false);
+
+        showToast(
+            e.message ||
+            'Failed to start challenge',
+            'error'
+        );
+
+        setBtnLoading(
+            btn,
+            false
+        );
+
     } finally {
+
         _challengeStartInFlight = false;
     }
 }
 
-// --- PATTERN INSIGHT (6h cache) ---
+
+// ============================================================
+// PATTERN INSIGHT
+// ============================================================
+
 async function loadPatternInsight(force) {
-    var el = document.getElementById('patternInsightText');
+
+    var el =
+        document.getElementById(
+            'patternInsightText'
+        );
+
+    if (!el) return;
+
     if (!force) {
-        var cached = getFromCache('pattern_insight', 6 * 60 * 60 * 1000);
-        if (cached && cached.insight) { el.textContent = cached.insight; return; }
-    }
-    el.textContent = 'Analyzing patterns...';
-    try {
-        var result = await apiCall('/api/pattern-insight', { method: 'POST', body: {} });
-        if (result.success && result.data && result.data.insight) {
-            el.textContent = result.data.insight;
-            saveToCache('pattern_insight', result.data);
-        } else {
-            el.textContent = 'Add more jobs to see patterns.';
+
+        var cached =
+            getFromCache(
+                'pattern_insight',
+                6 * 60 * 60 * 1000
+            );
+
+        if (
+            cached &&
+            cached.insight
+        ) {
+            el.textContent =
+                cached.insight;
+
+            return;
         }
+    }
+
+    el.textContent =
+        'Analyzing patterns...';
+
+    try {
+
+        var result =
+            await apiCall(
+                '/api/pattern-insight',
+                {
+                    method: 'POST',
+                    body: {}
+                }
+            );
+
+        if (
+            result.success &&
+            result.data &&
+            result.data.insight
+        ) {
+
+            el.textContent =
+                result.data.insight;
+
+            saveToCache(
+                'pattern_insight',
+                result.data
+            );
+
+        } else {
+
+            el.textContent =
+                'Add more jobs to see patterns.';
+        }
+
     } catch (e) {
-        el.textContent = 'Could not load insight. Try again later.';
+
+        el.textContent =
+            'Could not load insight. Try again later.';
     }
 }
 
-// --- JOBS ---
+
+// ============================================================
+// JOBS
+// ============================================================
+
 async function loadJobs() {
-    var container = document.getElementById('jobsListContainer');
+
+    var container =
+        document.getElementById(
+            'jobsListContainer'
+        );
 
     if (!container) return;
+
+
+    // --------------------------------------------------------
+    // LOADING SKELETON
+    // --------------------------------------------------------
 
     container.innerHTML =
         '<div class="skeleton-card">' +
         '<div class="skeleton-line long"></div>' +
         '<div class="skeleton-line medium"></div>' +
         '</div>' +
+
         '<div class="skeleton-card">' +
         '<div class="skeleton-line long"></div>' +
         '<div class="skeleton-line medium"></div>' +
         '</div>';
 
+
     try {
-        var result = await apiCall('/api/jobs');
 
-        if (result.success) {
-            var jobs = result.jobs || [];
+        var result =
+            await apiCall(
+                '/api/jobs'
+            );
 
-            if (jobs.length === 0) {
-                container.innerHTML =
-                    '<div class="glass-card" style="text-align:center;">' +
-                    '<p style="font-size:40px; margin:0 0 10px;">📭</p>' +
-                    '<p style="font-size:15px; font-weight:700; margin:0 0 6px;">No jobs yet</p>' +
-                    '<p style="font-size:13px; color:var(--axf-muted); margin:0;">Tap "+ Add Job" to start tracking applications</p>' +
-                    '</div>';
-                return;
-            }
+        if (!result || !result.success) {
 
-            var html = '';
-
-            for (var i = 0; i < jobs.length; i++) {
-                var j = jobs[i];
-
-                var statusClass =
-                    'status-' + (j.status || 'saved').replace('_', '-');
-
-                var priorityClass =
-                    'priority-' + (j.priority_level || 'low').toLowerCase();
-
-                html +=
-                    '<div class="job-card" data-job-id="' +
-                    escAttr(j.id) +
-                    '">';
-
-                html +=
-                    '<div class="job-card-header">' +
-                    '<div class="job-card-info">' +
-                    '<h4>' +
-                    escHtml(j.role || 'Untitled') +
-                    '</h4>' +
-                    '<p>' +
-                    escHtml(j.company || '') +
-                    (j.location
-                        ? ' · ' + escHtml(j.location)
-                        : '') +
-                    '</p>' +
-                    '</div>';
-
-                html +=
-                    '<div class="job-card-badges">' +
-                    '<span class="status-badge ' +
-                    statusClass +
-                    '">' +
-                    escHtml(j.status || 'saved') +
-                    '</span>';
-
-                if (
-                    j.priority_level &&
-                    String(j.priority_level).toUpperCase() !== 'LOW'
-                ) {
-                    html +=
-                        '<span class="priority-badge ' +
-                        priorityClass +
-                        '">' +
-                        escHtml(j.priority_level) +
-                        '</span>';
-                }
-
-                html += '</div></div>';
-
-                if (j.follow_up_due) {
-                    html +=
-                        '<div class="follow-up-alert">' +
-                        '<b>⏰ Follow-Up Due!</b>' +
-                        '<p>Your application needs attention. Consider sending a follow-up.</p>' +
-                        '</div>';
-                }
-
-                if (j.match_score || j.fit_score) {
-                    var score = j.match_score || j.fit_score || 0;
-
-                    html +=
-                        '<div class="job-stats">' +
-                        '<div class="job-stat-item">' +
-                        '<b>' +
-                        escHtml(String(score)) +
-                        '%</b>' +
-                        '<span>Match</span>' +
-                        '</div>';
-
-                    if (j.priority_score) {
-                        html +=
-                            '<div class="job-stat-item">' +
-                            '<b>' +
-                            escHtml(String(j.priority_score)) +
-                            '</b>' +
-                            '<span>Priority</span>' +
-                            '</div>';
-                    }
-
-                    if (j.analysis) {
-                        html +=
-                            '<div class="job-stat-item">' +
-                            '<b>' +
-                            ((j.analysis.matching_skills || []).length) +
-                            '</b>' +
-                            '<span>Matched</span>' +
-                            '</div>';
-
-                        html +=
-                            '<div class="job-stat-item">' +
-                            '<b>' +
-                            ((j.analysis.missing_skills || []).length) +
-                            '</b>' +
-                            '<span>Missing</span>' +
-                            '</div>';
-                    }
-
-                    html += '</div>';
-                }
-
-                if (j.next_action_data) {
-                    var na = j.next_action_data;
-
-                    html +=
-                        '<div class="next-action-box">' +
-                        '<div class="na-content">' +
-                        '<b>' +
-                        escHtml(na.next_action || '') +
-                        '</b>' +
-                        '<p>' +
-                        escHtml(na.reason || '') +
-                        '</p>' +
-                        '</div>';
-
-                    html +=
-                        '<button class="action-btn btn-primary next-action-btn" ' +
-                        'data-job-id="' +
-                        escAttr(j.id) +
-                        '" ' +
-                        'data-action="handleJobAction" ' +
-                        'data-action-type="' +
-                        escAttr(na.action || 'review') +
-                        '">' +
-                        '🏆 ' +
-                        escHtml(na.button_label || 'Take Action') +
-                        '</button>' +
-                        '</div>';
-                }
-
-                html += '</div>';
-            }
-
-            container.innerHTML = html;
+            throw new Error(
+                result &&
+                result.error
+                    ? result.error
+                    : 'Failed to load jobs.'
+            );
         }
+
+
+        var jobs =
+            Array.isArray(result.jobs)
+                ? result.jobs
+                : [];
+
+
+        // ----------------------------------------------------
+        // NO JOBS
+        // ----------------------------------------------------
+
+        if (jobs.length === 0) {
+
+            container.innerHTML =
+                '<div class="glass-card" style="text-align:center;">' +
+
+                '<p style="font-size:40px; margin:0 0 10px;">' +
+                '📭' +
+                '</p>' +
+
+                '<p style="font-size:15px; font-weight:700; margin:0 0 6px;">' +
+                'No jobs yet' +
+                '</p>' +
+
+                '<p style="font-size:13px; color:var(--axf-muted); margin:0;">' +
+                'Tap "+ Add Job" to start tracking applications' +
+                '</p>' +
+
+                '</div>';
+
+            return;
+        }
+
+
+        var html = '';
+
+
+        // ====================================================
+        // JOB LOOP
+        // ====================================================
+
+        for (
+            var i = 0;
+            i < jobs.length;
+            i++
+        ) {
+
+            var j = jobs[i];
+
+
+            var statusClass =
+                'status-' +
+                (
+                    j.status ||
+                    'saved'
+                ).replace(
+                    '_',
+                    '-'
+                );
+
+
+            var priorityClass =
+                'priority-' +
+                (
+                    j.priority_level ||
+                    'low'
+                ).toLowerCase();
+
+
+            // ------------------------------------------------
+            // JOB CARD
+            // ------------------------------------------------
+
+            html +=
+                '<div class="job-card" data-job-id="' +
+                escAttr(j.id) +
+                '">';
+
+
+            // ------------------------------------------------
+            // JOB HEADER
+            // Tap header to open Job Details / AI Analysis
+            // ------------------------------------------------
+
+            html +=
+                '<div class="job-card-header" ' +
+                'role="button" ' +
+                'tabindex="0" ' +
+                'onclick="openJobDetails(\'' +
+                escAttr(j.id) +
+                '\')" ' +
+                'onkeydown="if(event.key===\'Enter\' || event.key===\' \'){' +
+                'event.preventDefault();' +
+                'openJobDetails(\'' +
+                escAttr(j.id) +
+                '\');' +
+                '}">' +
+
+                '<div class="job-card-info">' +
+
+                '<h4>' +
+                escHtml(
+                    j.role ||
+                    'Untitled'
+                ) +
+                '</h4>' +
+
+                '<p>' +
+                escHtml(
+                    j.company ||
+                    ''
+                ) +
+
+                (
+                    j.location
+                        ? ' · ' +
+                          escHtml(
+                              j.location
+                          )
+                        : ''
+                ) +
+
+                '</p>' +
+
+                '<span style="' +
+                'font-size:11px;' +
+                'color:var(--axf-muted);' +
+                'display:block;' +
+                'margin-top:4px;' +
+                '">' +
+
+                'Tap to view AI analysis →' +
+
+                '</span>' +
+
+                '</div>';
+
+
+            // ------------------------------------------------
+            // BADGES
+            // ------------------------------------------------
+
+            html +=
+                '<div class="job-card-badges">' +
+
+                '<span class="status-badge ' +
+                statusClass +
+                '">' +
+
+                escHtml(
+                    j.status ||
+                    'saved'
+                ) +
+
+                '</span>';
+
+
+            if (
+                j.priority_level &&
+                String(
+                    j.priority_level
+                ).toUpperCase() !== 'LOW'
+            ) {
+
+                html +=
+                    '<span class="priority-badge ' +
+                    priorityClass +
+                    '">' +
+
+                    escHtml(
+                        j.priority_level
+                    ) +
+
+                    '</span>';
+            }
+
+
+            html +=
+                '</div>';
+
+
+            html +=
+                '</div>';
+
+
+            // ------------------------------------------------
+            // FOLLOW-UP ALERT
+            // ------------------------------------------------
+
+            if (j.follow_up_due) {
+
+                html +=
+                    '<div class="follow-up-alert">' +
+
+                    '<b>⏰ Follow-Up Due!</b>' +
+
+                    '<p>' +
+                    'Your application needs attention. ' +
+                    'Consider sending a follow-up.' +
+                    '</p>' +
+
+                    '</div>';
+            }
+
+
+            // ------------------------------------------------
+            // JOB STATS
+            // ------------------------------------------------
+
+            if (
+                j.match_score ||
+                j.fit_score
+            ) {
+
+                var score =
+                    j.match_score ||
+                    j.fit_score ||
+                    0;
+
+
+                html +=
+                    '<div class="job-stats">';
+
+
+                // MATCH
+                html +=
+                    '<div class="job-stat-item">' +
+
+                    '<b>' +
+                    escHtml(
+                        String(score)
+                    ) +
+                    '%</b>' +
+
+                    '<span>Match</span>' +
+
+                    '</div>';
+
+
+                // PRIORITY
+                if (j.priority_score) {
+
+                    html +=
+                        '<div class="job-stat-item">' +
+
+                        '<b>' +
+                        escHtml(
+                            String(
+                                j.priority_score
+                            )
+                        ) +
+                        '</b>' +
+
+                        '<span>Priority</span>' +
+
+                        '</div>';
+                }
+
+
+                // MATCHED SKILLS
+                if (j.analysis) {
+
+                    html +=
+                        '<div class="job-stat-item">' +
+
+                        '<b>' +
+                        (
+                            Array.isArray(
+                                j.analysis.matching_skills
+                            )
+                                ? j.analysis.matching_skills.length
+                                : 0
+                        ) +
+                        '</b>' +
+
+                        '<span>Matched</span>' +
+
+                        '</div>';
+
+
+                    // MISSING SKILLS
+                    html +=
+                        '<div class="job-stat-item">' +
+
+                        '<b>' +
+                        (
+                            Array.isArray(
+                                j.analysis.missing_skills
+                            )
+                                ? j.analysis.missing_skills.length
+                                : 0
+                        ) +
+                        '</b>' +
+
+                        '<span>Missing</span>' +
+
+                        '</div>';
+                }
+
+
+                html +=
+                    '</div>';
+            }
+
+
+            // =================================================
+            // SMART JOB NEXT ACTION
+            // =================================================
+
+            var hasAnalysis =
+                !!j.analysis;
+
+
+            html +=
+                '<div class="next-action-box">' +
+
+                '<div class="na-content">';
+
+
+            if (hasAnalysis) {
+
+                // ---------------------------------------------
+                // ANALYSIS EXISTS
+                // ---------------------------------------------
+
+                html +=
+                    '<b>AI Job Analysis Ready</b>' +
+
+                    '<p>' +
+                    'Review your match score, missing skills, ' +
+                    'and Should You Apply recommendation.' +
+                    '</p>';
+
+
+                html +=
+                    '</div>' +
+
+                    '<button ' +
+                    'type="button" ' +
+                    'class="action-btn btn-primary next-action-btn" ' +
+                    'data-job-id="' +
+                    escAttr(j.id) +
+                    '" ' +
+                    'data-action="openJobDetails" ' +
+                    'onclick="openJobDetails(\'' +
+                    escAttr(j.id) +
+                    '\')">' +
+
+                    '🔍 View AI Analysis' +
+
+                    '</button>';
+
+            } else {
+
+                // ---------------------------------------------
+                // ANALYSIS NOT DONE
+                // ---------------------------------------------
+
+                html +=
+                    '<b>Analyze this job</b>' +
+
+                    '<p>' +
+                    'Get your match score, missing skills, ' +
+                    'and Should You Apply recommendation.' +
+                    '</p>';
+
+
+                html +=
+                    '</div>' +
+
+                    '<button ' +
+                    'type="button" ' +
+                    'class="action-btn btn-primary next-action-btn" ' +
+                    'data-job-id="' +
+                    escAttr(j.id) +
+                    '" ' +
+                    'data-action="analyzeJob">' +
+
+                    '🔍 Analyze Job' +
+
+                    '</button>';
+            }
+
+
+            html +=
+                '</div>';
+
+
+            // ------------------------------------------------
+            // CLOSE JOB CARD
+            // ------------------------------------------------
+
+            html +=
+                '</div>';
+        }
+
+
+        // ====================================================
+        // IMPORTANT: CLOSE FOR LOOP BEFORE SETTING HTML
+        // ====================================================
+
+        container.innerHTML =
+            html;
+
+
     } catch (e) {
+
+        console.error(
+            '[JOBS] Load failed:',
+            e
+        );
+
         container.innerHTML =
             '<div class="glass-card" style="text-align:center;">' +
-            '<p style="color:var(--axf-danger);">Failed to load jobs. Pull down to retry.</p>' +
+
+            '<p style="color:var(--axf-danger);">' +
+            'Failed to load jobs. Pull down to retry.' +
+            '</p>' +
+
             '</div>';
     }
 }
 
 
-function escAttr(str) {
-    if (str === null || str === undefined) return '';
+// ============================================================
+// ESCAPE ATTRIBUTE
+// ============================================================
 
-    var value = String(str);
+function escAttr(str) {
+
+    if (
+        str === null ||
+        str === undefined
+    ) {
+        return '';
+    }
+
+    var value =
+        String(str);
 
     return value
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(
+            /&/g,
+            '&amp;'
+        )
+        .replace(
+            /"/g,
+            '&quot;'
+        )
+        .replace(
+            /'/g,
+            '&#39;'
+        )
+        .replace(
+            /</g,
+            '&lt;'
+        )
+        .replace(
+            />/g,
+            '&gt;'
+        );
 }
 
-// --- SETUP PROFILE ---
+
+// ============================================================
+// SETUP PROFILE
+// ============================================================
+
 async function setupProfile(btn) {
 
     var nameEl =
-        document.getElementById('name');
+        document.getElementById(
+            'name'
+        );
 
     var skillsEl =
-        document.getElementById('skills');
+        document.getElementById(
+            'skills'
+        );
 
     var targetJobEl =
-        document.getElementById('target_job');
+        document.getElementById(
+            'target_job'
+        );
 
     var errorEl =
-        document.getElementById('formError');
+        document.getElementById(
+            'formError'
+        );
+
 
     var name =
         nameEl
             ? nameEl.value.trim()
             : '';
 
+
     var skills =
         skillsEl
             ? skillsEl.value.trim()
             : '';
+
 
     var targetJob =
         targetJobEl
             ? targetJobEl.value.trim()
             : '';
 
+
     if (errorEl) {
-        errorEl.textContent = '';
-        errorEl.style.display = 'none';
+
+        errorEl.textContent =
+            '';
+
+        errorEl.style.display =
+            'none';
     }
+
 
     if (!name) {
+
         if (errorEl) {
+
             errorEl.textContent =
                 'Please enter your full name.';
-            errorEl.style.display = 'block';
+
+            errorEl.style.display =
+                'block';
         }
+
         return;
     }
+
 
     if (!skills) {
+
         if (errorEl) {
+
             errorEl.textContent =
                 'Please enter your current skills.';
-            errorEl.style.display = 'block';
+
+            errorEl.style.display =
+                'block';
         }
+
         return;
     }
+
 
     if (!targetJob) {
+
         if (errorEl) {
+
             errorEl.textContent =
                 'Please enter your target job role.';
-            errorEl.style.display = 'block';
+
+            errorEl.style.display =
+                'block';
         }
+
         return;
     }
 
+
     if (btn) {
-        setBtnLoading(btn, true);
+        setBtnLoading(
+            btn,
+            true
+        );
     }
+
 
     try {
 
@@ -3926,6 +4526,7 @@ async function setupProfile(btn) {
                 '/api/setup-profile',
                 {
                     method: 'POST',
+
                     body: {
                         name: name,
                         skills: skills,
@@ -3934,30 +4535,41 @@ async function setupProfile(btn) {
                 }
             );
 
+
         if (
             !result ||
             result.success !== true
         ) {
+
             throw new Error(
-                (result && result.error) ||
+                (
+                    result &&
+                    result.error
+                ) ||
                 'Could not create your profile.'
             );
         }
 
+
         appState =
             result.state ||
             appState;
+
 
         showToast(
             'Career Twin created successfully!',
             'success'
         );
 
+
         celebrate();
+
 
         await loadAppState();
 
+
         await showApp();
+
 
     } catch (e) {
 
@@ -3966,15 +4578,19 @@ async function setupProfile(btn) {
             e
         );
 
+
         if (errorEl) {
+
             errorEl.textContent =
                 e && e.message
                     ? e.message
                     : 'Could not create your profile. Please try again.';
 
+
             errorEl.style.display =
                 'block';
         }
+
 
         showToast(
             e && e.message
@@ -3983,23 +4599,85 @@ async function setupProfile(btn) {
             'error'
         );
 
+
     } finally {
 
         if (btn) {
-            setBtnLoading(btn, false);
+
+            setBtnLoading(
+                btn,
+                false
+            );
         }
     }
 }
 
-function openAddJobModal() {
-    document.getElementById('addJobRole').value = '';
-    document.getElementById('addJobCompany').value = '';
-    document.getElementById('addJobLocation').value = '';
-    document.getElementById('addJobSalary').value = '';
-    document.getElementById('addJobJD').value = '';
-    document.getElementById('addJobURL').value = '';
 
-    openModal('addJobModal');
+// ============================================================
+// ADD JOB MODAL
+// ============================================================
+
+function openAddJobModal() {
+
+    var roleEl =
+        document.getElementById(
+            'addJobRole'
+        );
+
+    var companyEl =
+        document.getElementById(
+            'addJobCompany'
+        );
+
+    var locationEl =
+        document.getElementById(
+            'addJobLocation'
+        );
+
+    var salaryEl =
+        document.getElementById(
+            'addJobSalary'
+        );
+
+    var jdEl =
+        document.getElementById(
+            'addJobJD'
+        );
+
+    var urlEl =
+        document.getElementById(
+            'addJobURL'
+        );
+
+
+    if (roleEl) {
+        roleEl.value = '';
+    }
+
+    if (companyEl) {
+        companyEl.value = '';
+    }
+
+    if (locationEl) {
+        locationEl.value = '';
+    }
+
+    if (salaryEl) {
+        salaryEl.value = '';
+    }
+
+    if (jdEl) {
+        jdEl.value = '';
+    }
+
+    if (urlEl) {
+        urlEl.value = '';
+    }
+
+
+    openModal(
+        'addJobModal'
+    );
 }
 
 
@@ -4233,161 +4911,187 @@ async function openJobDetails(jobId) {
             }
 
 
-            // RESUME IMPROVEMENTS
-            html +=
-                '<b style="font-size:12px; display:block; margin-top:10px;">💡 Resume Improvements</b>';
+           // SHOULD YOU APPLY?
+if (a.should_apply) {
+    var applyDecision = String(a.should_apply).toUpperCase();
 
-            var resumeImprovements =
-                Array.isArray(a.resume_improvements)
-                    ? a.resume_improvements
-                    : [];
+    var applyLabel = 'Should You Apply?';
+    var applySymbol = '🎯';
 
-            if (resumeImprovements.length) {
-                html += '<ul class="analysis-list">';
+    if (applyDecision === 'YES') {
+        applySymbol = '✅';
+    } else if (applyDecision === 'MAYBE') {
+        applySymbol = '⚠️';
+    } else if (applyDecision === 'NO') {
+        applySymbol = '❌';
+    }
 
-                for (
-                    var ri = 0;
-                    ri < resumeImprovements.length;
-                    ri++
-                ) {
-                    html +=
-                        '<li>' +
-                        escHtml(String(resumeImprovements[ri])) +
-                        '</li>';
-                }
+    html +=
+        '<div style="margin-top:14px; padding:14px; border:1px solid var(--ax-border, #E5E7EB); border-radius:14px; background:var(--ax-card, #FFFFFF);">';
 
-                html += '</ul>';
-            }
+    html +=
+        '<div style="font-size:12px; font-weight:800; color:var(--axf-muted); margin-bottom:6px;">' +
+        applyLabel +
+        '</div>';
 
+    html +=
+        '<div style="font-size:20px; font-weight:900; margin-bottom:8px;">' +
+        applySymbol +
+        ' ' +
+        escHtml(applyDecision) +
+        '</div>';
 
-            html +=
-                '<p style="font-size:13px; margin:10px 0 0; color:var(--axf-muted);">' +
-                '<b>Summary:</b> ' +
-                escHtml(a.summary || '') +
-                '</p>';
-
-            html += '</div>';
-
-
-            // AI DISCLAIMER
-            html +=
-                '<div class="ai-disclaimer">' +
-                '⚠️ <b>AI Analysis Notice:</b> ' +
-                'This analysis is based on the job description you provided and your stated skills. ' +
-                'Skills marked "matching" reflect what you listed in your profile. ' +
-                'This is an AI-generated suggestion — not a verified assessment. ' +
-                'Use it as guidance, not a guarantee.' +
-                '</div>';
-        }
-
-
-        // ACTION BUTTONS
+    if (a.should_apply_reason) {
         html +=
-            '<div style="display:flex; gap:8px; flex-wrap:wrap;">';
-
-        if (!job.analysis) {
-            html +=
-                '<button class="action-btn btn-primary" ' +
-                'data-job-id="' +
-                escAttr(job.id) +
-                '" ' +
-                'data-action="analyzeJob">' +
-                '🔍 Analyze Job' +
-                '</button>';
-        }
-
-        if (
-            job.status === 'applied' ||
-            job.status === 'follow-up' ||
-            job.follow_up_due
-        ) {
-            html +=
-                '<button class="action-btn btn-secondary" ' +
-                'data-job-id="' +
-                escAttr(job.id) +
-                '" ' +
-                'data-action="generateFollowup">' +
-                '📧 Follow-Up' +
-                '</button>';
-        }
-
-        if (
-            job.status === 'interview' ||
-            job.status === 'preparing'
-        ) {
-            html +=
-                '<button class="action-btn btn-secondary" ' +
-                'data-job-id="' +
-                escAttr(job.id) +
-                '" ' +
-                'data-action="interviewPrep">' +
-                '🎤 Interview Prep' +
-                '</button>';
-        }
-
-        html +=
-            '<button class="action-btn btn-danger" ' +
-            'data-job-id="' +
-            escAttr(job.id) +
-            '" ' +
-            'data-action="deleteJob">' +
-            '🗑️ Delete' +
-            '</button>';
-
-        html += '</div>';
-
-
-        // TIMELINE
-        if (
-            Array.isArray(job.timeline) &&
-            job.timeline.length
-        ) {
-            html +=
-                '<h4 style="font-size:15px; font-weight:800; margin:20px 0 12px;">📋 Timeline</h4>';
-
-            for (
-                var t = 0;
-                t < job.timeline.length;
-                t++
-            ) {
-                var ti = job.timeline[t];
-
-                html +=
-                    '<div class="timeline-item">';
-
-                html +=
-                    '<p style="font-size:13px; margin:0; font-weight:600;">' +
-                    escHtml(ti.event || '') +
-                    '</p>';
-
-                html +=
-                    '<p style="font-size:11px; color:#9CA3AF; margin:2px 0 0;">' +
-                    escHtml(ti.details || '') +
-                    '</p>';
-
-                html +=
-                    '<p style="font-size:10px; color:#9CA3AF; margin:2px 0 0;">' +
-                    escHtml(ti.date || '') +
-                    '</p>';
-
-                html += '</div>';
-            }
-        }
-
-        contentEl.innerHTML = html;
-
-    } catch (e) {
-        titleEl.textContent = 'Job Details';
-
-        contentEl.innerHTML =
-            '<p style="color:var(--axf-danger);">' +
-            escHtml(
-                e.message ||
-                'Failed to load job details.'
-            ) +
+            '<p style="font-size:13px; line-height:1.5; margin:0; color:var(--axf-text);">' +
+            '<b>Why:</b> ' +
+            escHtml(String(a.should_apply_reason)) +
             '</p>';
     }
+
+    html += '</div>';
 }
+
+
+// SUMMARY
+html +=
+    '<p style="font-size:13px; line-height:1.5; margin:10px 0 0; color:var(--axf-muted);">' +
+    '<b>Summary:</b> ' +
+    escHtml(a.summary || '') +
+    '</p>';
+
+html += '</div>';
+
+
+// AI DISCLAIMER
+html +=
+    '<div class="ai-disclaimer">' +
+    '⚠️ <b>AI Analysis Notice:</b> ' +
+    'This analysis is based on the job description you provided and your stated skills. ' +
+    'Skills marked "matching" reflect what you listed in your profile. ' +
+    'This is an AI-generated suggestion — not a verified assessment. ' +
+    'Use it as guidance, not a guarantee.' +
+    '</div>';
+}
+
+
+// ACTION BUTTONS
+html +=
+'<div style="display:flex; gap:8px; flex-wrap:wrap;">';
+
+if (!job.analysis) {
+html +=
+'<button class="action-btn btn-primary" ' +
+'data-job-id="' +
+escAttr(job.id) +
+'" ' +
+'data-action="analyzeJob">' +
+'🔍 Analyze Job' +
+'</button>';
+}
+
+
+// INTERVIEW PREP
+// Show Interview Prep after job analysis is available.
+if (
+    job.analysis &&
+    job.status !== 'rejected' &&
+    job.status !== 'closed' &&
+    job.status !== 'offer'
+) {
+    html +=
+        '<button class="action-btn btn-secondary" ' +
+        'data-job-id="' +
+        escAttr(job.id) +
+        '" ' +
+        'data-action="interviewPrep">' +
+        '🎤 Interview Prep' +
+        '</button>';
+}
+
+
+// FOLLOW-UP
+if (
+    job.status === 'applied' ||
+    job.status === 'follow-up' ||
+    job.follow_up_due
+) {
+    html +=
+        '<button class="action-btn btn-secondary" ' +
+        'data-job-id="' +
+        escAttr(job.id) +
+        '" ' +
+        'data-action="generateFollowup">' +
+        '📧 Follow-Up' +
+        '</button>';
+}
+
+
+html +=
+    '<button class="action-btn btn-danger" ' +
+    'data-job-id="' +
+    escAttr(job.id) +
+    '" ' +
+    'data-action="deleteJob">' +
+    '🗑️ Delete' +
+    '</button>';
+
+html += '</div>';
+
+
+// TIMELINE
+if (
+    Array.isArray(job.timeline) &&
+    job.timeline.length
+) {
+    html +=
+        '<h4 style="font-size:15px; font-weight:800; margin:20px 0 12px;">📋 Timeline</h4>';
+
+    for (
+        var t = 0;
+        t < job.timeline.length;
+        t++
+    ) {
+        var ti = job.timeline[t];
+
+        html +=
+            '<div class="timeline-item">';
+
+        html +=
+            '<p style="font-size:13px; margin:0; font-weight:600;">' +
+            escHtml(ti.event || '') +
+            '</p>';
+
+        html +=
+            '<p style="font-size:11px; color:#9CA3AF; margin:2px 0 0;">' +
+            escHtml(ti.details || '') +
+            '</p>';
+
+        html +=
+            '<p style="font-size:10px; color:#9CA3AF; margin:2px 0 0;">' +
+            escHtml(ti.date || '') +
+            '</p>';
+
+        html += '</div>';
+    }
+}
+
+
+contentEl.innerHTML = html;
+
+} catch (e) {
+    titleEl.textContent = 'Job Details';
+
+    contentEl.innerHTML =
+        '<p style="color:var(--axf-danger);">' +
+        escHtml(
+            e.message ||
+            'Failed to load job details.'
+        ) +
+        '</p>';
+    }
+}
+
 
 
 async function analyzeJob(jobId) {
@@ -4399,32 +5103,12 @@ async function analyzeJob(jobId) {
         return;
     }
 
-    if (appState && appState.jobs) {
-        var job = null;
-
-        for (
-            var i = 0;
-            i < appState.jobs.length;
-            i++
-        ) {
-            if (appState.jobs[i].id === jobId) {
-                job = appState.jobs[i];
-                break;
-            }
-        }
-
-        if (job) {
-            var validation =
-                validateJobDataForAI(job);
-
-            if (!validation.valid) {
-                showToast(
-                    validation.reason,
-                    'warning'
-                );
-                return;
-            }
-        }
+    if (!jobId) {
+        showToast(
+            'Invalid job. Please try again.',
+            'error'
+        );
+        return;
     }
 
     _analyzeJobInFlight = true;
@@ -4437,15 +5121,18 @@ async function analyzeJob(jobId) {
     );
 
     try {
-        var result =
-            await apiCall('/api/analyze-job', {
+        var result = await apiCall(
+            '/api/analyze-job',
+            {
                 method: 'POST',
                 body: {
                     job_id: jobId
                 }
-            });
+            }
+        );
 
-        if (result.success) {
+        if (result && result.success) {
+
             showToast(
                 'Analysis complete! +25 XP',
                 'success'
@@ -4460,19 +5147,24 @@ async function analyzeJob(jobId) {
             updateDashStats();
 
         } else {
+
             showToast(
-                result.error || 'Analysis failed',
+                (result && result.error) ||
+                'Analysis failed. Please try again.',
                 'error'
             );
         }
 
     } catch (e) {
+
         showToast(
-            e.message || 'Analysis failed',
+            (e && e.message) ||
+            'Analysis failed. Please try again.',
             'error'
         );
 
     } finally {
+
         _analyzeJobInFlight = false;
     }
 }
