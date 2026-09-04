@@ -13,7 +13,7 @@
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/static/icons/applyx-512.png",
+      "src": "/static/applyx-512.png"
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
