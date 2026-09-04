@@ -1,0 +1,22 @@
+{
+  "name": "Apply.X",
+  "short_name": "Apply.X",
+  "id": "applyx",
+  "description": "Apply.X - AI Career Companion for students and job seekers.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "en",
+  "dir": "ltr",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/static/icons/applyx-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
