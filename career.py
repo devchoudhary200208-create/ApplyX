@@ -5784,6 +5784,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/privacy-policy")
+def privacy_policy():
+    return render_template("privacy_policy.html")
+    
+
 @app.errorhandler(400)
 def bad_request(e):
     return jsonify({"success": False, "error": "Bad request."}), 400
